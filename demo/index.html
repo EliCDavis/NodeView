@@ -9,18 +9,21 @@ and open the template in the editor.
         <title>Example</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            body, canvas {
+                width: 100%;
+                height:100%;
+            }
+        </style>
     </head>
+    
     <body>
         
-        <script src="nodeview.min.js"></script>
         
-        <div>
-            Example of Node View
-        </div>
-        
-        <canvas>
+        <canvas id="cv">
             You don't support Canvas from HTML 5.  Upgrade your browser dude jeez
         </canvas>
         
+        <script src="nodeview.min.js"></script>
     </body>
 </html>

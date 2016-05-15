@@ -25,13 +25,12 @@ gulp.task('default', function () {
     gulp.src('./src/*.js')
     .pipe(concat('nodeview.min.js'))
     .pipe(uglify())
-    .pipe(gulp.dest('./public/'));
+    .pipe(gulp.dest('./demo/'));
 });
 
 
-gulp.task('test', function(){
-    return browserify('src/main')
-            .bundle()
-            .pipe(source('nodeview.min.js'))
-            .pipe(gulp.dest('public'));
+gulp.task('dev', function(){
+   gulp.src('./src/*.js')
+    .pipe(concat('nodeview.min.js'))
+    .pipe(gulp.dest('./demo/'));
 });
