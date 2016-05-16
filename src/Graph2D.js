@@ -45,7 +45,7 @@ function Graph2D(canvas){
 
     
     /**
-     * The x coordinate that is at the center of the canvas currentely.
+     * The x coordinate that is at the top left of the canvas currentely.
      * This changes as the user moves around on the graph
      * 
      * @type Number
@@ -54,7 +54,7 @@ function Graph2D(canvas){
 
 
     /**
-     * The y coordinate that is at the center of the canvas currentely.
+     * The y coordinate that is at the top left of the canvas currentely.
      * This changes as the user moves around on the graph
      * 
      * @type Number
@@ -79,6 +79,15 @@ function Graph2D(canvas){
     
     
     /**
+     * 
+     * @returns {Graph2D._canvasContext|CanvasRenderingContext2D}
+     */
+    self.getContext = function(){
+        return _canvasContext;
+    };
+    
+    
+    /**
      * Add's all the event listeners to the canvas for user interaction.
      * 
      * @param {<canvas>} cvs The canvas element on the page
@@ -89,17 +98,17 @@ function Graph2D(canvas){
         // Figure out what Node was clicked (if any) and call their onclick function
         cvs.addEventListener('click', function(event) {
         
-            for(var i = 0; i < _nodes.length; i ++){
+            var coords = cvs.relMouseCoords(event);
+        
+            _nodes.forEach(function(node){
                 
-                if(_nodes[i].wasClicked(event.clientX, event.clientY)){ // TODO: This is probably wrong
-                    if(_nodes[i].onclick !== null || _nodes[i].onclick){
-                        _nodes[i].onclick();
+                if(node.wasClicked(self, [coords.x, coords.y])){
+                    if(node.onclick !== null && node.onclick !== undefined){
+                        node.onclick();
                     }
                 }
                 
-            }
-        
-            console.log(event);
+            });
         
         }, false);
         
@@ -132,7 +141,52 @@ function Graph2D(canvas){
     self.getScale = function(){
         return _scale;
     };
+    
 
+    /**
+     * The default node rendering function assigned to all nodes upon creation
+     * 
+     * @param {Node2D} node The node being rendered
+     * @param {Graph2D} graph The graph that the node is apart of
+     * @returns {undefined}
+     */
+    var _defaultNodeRender = function(node, graph){
+        
+        // TODO: do input santizing
+        
+        var graphPos = graph.getPosition();
+        var scale = graph.getScale();
+        var nodeSize = node.getRenderData()['size'];
+        
+        var startPos = [node.getPosition()[0] + graphPos[0] * scale,
+                        node.getPosition()[1] + graphPos[1] * scale];
+                    
+        graph.getContext().fillStyle=node.getRenderData()['color'];
+        graph.getContext().fillRect(
+                startPos[0],
+                startPos[1],
+                nodeSize[0] * scale,
+                nodeSize[1] * scale
+                );
+
+    };
+    
+    
+    var _defaultNodeMouseDetection = function(node, graph, mousePos){
+        
+        var graphPos = graph.getPosition();
+        var scale = graph.getScale();
+        var nodeSize = node.getRenderData()['size'];
+        
+        var startPos = [node.getPosition()[0] + graphPos[0] * scale,
+                        node.getPosition()[1] + graphPos[1] * scale];
+                    
+        var endPos = [nodeSize[0] * scale,
+                      nodeSize[1] * scale];
+                  
+        return pointsInsideRect([startPos[0], startPos[1], endPos[0]-startPos[0], endPos[1]-startPos[1]] , mousePos);
+    };
+    
 
     /**
      * Creates a new empty node and adds it to the graph immediately
@@ -142,31 +196,13 @@ function Graph2D(canvas){
       
         var node = new Node2D();
         
+        node.setRenderDataByKey('size', [75, 75]);
+        node.setRenderDataByKey('color', '#4CAF50');
+        node.setRenderFunction(_defaultNodeRender, _defaultNodeMouseDetection);
+        
         _nodes.push(node);
         
         return node;
-        
-    };
-    
-    
-    /**
-     * Renders the given node by the default method that the canvas has set 
-     * for itself.
-     * 
-     * @param {Node2D} node
-     * @param {CanvasRenderingContext2D} ctx
-     * @param {Number} scale
-     * @param {Array} graphPos
-     * @returns {undefined}
-     */
-    var _renderNode = function(node, ctx, scale, graphPos){
-        
-        // TODO: do input santizing
-        
-        var startPos = [node.getPosition()[0] + graphPos[0] * scale,
-                        node.getPosition()[1] + graphPos[1] * scale];
-                    
-        ctx.fillRect(startPos[0], startPos[1], 75, 75);
         
     };
     
@@ -185,21 +221,14 @@ function Graph2D(canvas){
         // Clear the canvas of anything rendered last frame
         _canvasContext.clearRect(0, 0, _canvasContext.canvas.width, _canvasContext.canvas.height);
       
-        // Render all of our nodes
-        for(var i = 0; i < _nodes.length; i ++){
-            
-            if(_nodes[i].getRenderFunction() !== null && _nodes[i].getRenderFunction() !== undefined){
-                
-                _nodes[i].render(self._canvasContext);
-                
-            } else {
-                
-                _renderNode(_nodes[i], _canvasContext, _scale, self.getPosition());
-                
+        _nodes.forEach(function(node){
+      
+            if(node.getRenderFunction() !== null && node.getRenderFunction() !== undefined){
+                node.render(node, self);
             }
-            
-        }
         
+        });
+      
         window.requestAnimationFrame(_drawFrame);
         
     };
@@ -207,3 +236,5 @@ function Graph2D(canvas){
     _drawFrame();
     
 }
+
+

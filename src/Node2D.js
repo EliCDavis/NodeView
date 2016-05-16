@@ -30,192 +30,227 @@
  * @returns {Node2D}
  */
 function Node2D() {
-    
-        var self = this;
 
-        // TODO: Create a render mode
+    var self = this;
 
-        /**
-         * The name of the node, how we will refer to it as short hand.
-         * 
-         * @type String
-         */
-        var _name = "Node Name";
+    // TODO: Create a render mode enum
 
-
-        /**
-         * Whatever data we want to keep up with inside the node for safe
-         * keepings.
-         * 
-         * @type Object
-         */
-        var _data = "Data";
-        
-        
-        /**
-         * The X position of the node relative to the graph
-         * 
-         * @type Number
-         */
-        var _xPosition = 0;
-        
-        
-        /**
-         * The Y position of the node relative to the graph
-         * 
-         * @type Number
-         */
-        var _yPosition = 0;
+    /**
+     * The name of the node, how we will refer to it as short hand.
+     * 
+     * @type String
+     */
+    var _name = "Node Name";
 
 
-        /**
-         * A list of all nodes that consider this node a parent.
-         * 
-         * @type Array
-         */
-        var _children = [];
+    /**
+     * Whatever data we want to keep up with inside the node for safe
+     * keepings.
+     * 
+     * @type Object
+     */
+    var _data = "Data";
 
 
-        /**
-         * A list of all nodes this node is "connected" to.
-         * 
-         * @type Array
-         */
-        var _links = [];
+    /**
+     * Arbitrary data kept up with for rendering.
+     * 
+     * @type type
+     */
+    var _renderingData = {};
 
 
-        /**
-         * A list of all nodes that this node is considered in a "group" with.
-         * 
-         * TODO: Determine best method of dealing with nodes.
-         * 
-         * @type Array
-         */
-        var _groupNodes = [];
+    /**
+     * The X position of the node relative to the graph
+     * 
+     * @type Number
+     */
+    var _xPosition = 0;
 
 
-        /**
-         * Method called when the node was clicked on the canvas
-         */
-        self.onclick = null;
-        
-        
-        /**
-         * How we want to have this node rendered
-         * @type method
-         */
-        var _renderFunction = null;
+    /**
+     * The Y position of the node relative to the graph
+     * 
+     * @type Number
+     */
+    var _yPosition = 0;
 
 
-        /**
-         * Boolean function that takes the x and y coordinates of the mouse
-         * and determines whether or not the node was clicked
-         * @type method
-         */
-        var _clickDetectionfunction = null;
+    /**
+     * A list of all nodes that consider this node a parent.
+     * 
+     * @type Array
+     */
+    var _children = [];
 
 
-        /**
-         * Boolean method given an x and y mouse position determines whether or
-         * not the node was actually clicked
-         * 
-         * @param {type} mouseX
-         * @param {type} mouseY
-         * @returns {Boolean}
-         */
-        self.wasClicked = function(mouseX, mouseY){
-            
-            if(_clickDetectionfunction !== null || _clickDetectionfunction !== undefined){
-                
-                var result = _clickDetectionfunction(mouseX, mouseY);
+    /**
+     * A list of all nodes this node is "connected" to.
+     * 
+     * @type Array
+     */
+    var _links = [];
 
-                // If the method actually returned a boolean value
-                if(result === true || result === false){
-                    return result;
-                }
-                
+
+    /**
+     * A list of all nodes that this node is considered in a "group" with.
+     * 
+     * TODO: Determine best method of dealing with nodes.
+     * 
+     * @type Array
+     */
+    var _groupNodes = [];
+
+
+    /**
+     * Method called when the node was clicked on the canvas
+     */
+    self.onclick = function(){
+        console.log("Clicked");
+    };
+
+
+    /**
+     * How we want to have this node rendered
+     * @type method
+     */
+    var _renderFunction = null;
+
+
+    /**
+     * Boolean function that takes the x and y coordinates of the mouse
+     * and determines whether or not the node was clicked
+     * @type method
+     */
+    var _clickDetectionfunction = null;
+
+
+    /**
+     * Set's a specific proterty of the rendering data.
+     * 
+     * @param {type} key The key to the dictionary
+     * @param {type} data The data to be stored by that key
+     * @returns {undefined}
+     */
+    self.setRenderDataByKey = function (key, data) {
+        _renderingData[key] = data;
+    };
+
+
+    /**
+     * Returns all arbitrary rendering data that the node uses to display
+     * itself. 
+     * 
+     * @returns {JSON} RenderingData Arbitrary data set for keeping up how
+     * to render the node.
+     */
+    self.getRenderData = function () {
+        return _renderingData;
+    };
+
+
+    /**
+     * Boolean method given an x and y mouse position determines whether or
+     * not the node was actually clicked
+     * 
+     * @param {Graph2D} graph
+     * @param {Array} mousePos
+     * @returns {Boolean}
+     */
+    self.wasClicked = function (graph, mousePos) {
+
+        if (_clickDetectionfunction !== null && _clickDetectionfunction !== undefined) {
+
+            var result = _clickDetectionfunction(self, graph, mousePos);
+
+            // If the method actually returned a boolean value
+            if (result === true || result === false) {
+                return result;
             }
-            
-            return false;
-            
-        };
+
+        }
+
+        return false;
+
+    };
 
 
-        /**
-         * Override how the node will render and what is considered a mouse
-         * click by passing your own methods for rendering and click detection.
-         * 
-         * The render method must have an argument for taking in the context of 
-         * the canvas that it will render too.
-         * 
-         * The click detection method must take 4 arguements.. TODO: Finish.
-         * 
-         * @param {function(CanvasRenderingContext2D)} renderMethod
-         * @param {function(withinNodeMethod)} withinNodeMethod method for 
-         * determining whether of not a node has been clicked.
-         * @returns {undefined}
-         */
-        self.setRenderFunction = function(renderMethod, withinNodeMethod){
-            
-            if(renderMethod === null){
-                throw "Error setting render funciton for Node! Attempting to add a null render method";
-            }
-            
-            if(withinNodeMethod === null){
-                throw "Error setting render funciton for Node! Attempting to add a null click detection method";
-            }
-            
-            _renderFunction = renderMethod;
-            _clickDetectionfunction = withinNodeMethod;
-        
-        };
-        
-        
-        /**
-         * Returns the method at which the node is rendered with
-         * @returns {method}
-         */
-        self.getRenderFunction = function(){
-            return _renderFunction;
-        };
+    /**
+     * Override how the node will render and what is considered a mouse
+     * click by passing your own methods for rendering and click detection.
+     * 
+     * The render method must have an argument for taking in the context of 
+     * the canvas that it will render too.
+     * 
+     * The click detection method must take 4 arguements.. TODO: Finish.
+     * 
+     * @param {function(CanvasRenderingContext2D)} renderMethod
+     * @param {function(withinNodeMethod)} withinNodeMethod method for 
+     * determining whether of not a node has been clicked.
+     * @returns {undefined}
+     */
+    self.setRenderFunction = function (renderMethod, withinNodeMethod) {
 
-        
-        /**
-         * Given a context, renders the node to that context
-         * 
-         * @param {type} canvasContext
-         * @returns {undefined}
-         */
-       self.render = function(canvasContext){
-           
-           if(_renderFunction === null){
-               throw "Failure to render node! There's no render function defined!";
-           }
-           
-           _renderFunction(canvasContext);
-           
-       };
+        if (renderMethod === null) {
+            throw "Error setting render funciton for Node! Attempting to add a null render method";
+        }
+
+        if (withinNodeMethod === null) {
+            throw "Error setting render funciton for Node! Attempting to add a null click detection method";
+        }
+
+        _renderFunction = renderMethod;
+        _clickDetectionfunction = withinNodeMethod;
+
+    };
 
 
-       /**
-        * returns the position of the node in x,y coordinates of the graph
-        * in the form of [x, y]
-        * 
-        * @returns {Array}
-        */
-       self.getPosition = function(){
-           return [_xPosition, _yPosition];
-       };
+    /**
+     * Returns the method at which the node is rendered with
+     * @returns {method}
+     */
+    self.getRenderFunction = function () {
+        return _renderFunction;
+    };
 
 
-       /**
-        * For testing at the moment, will eventually be removed
-        * TODO: Remove
-        * 
-        * @returns {String}
-        */
-        self.getContents = function () {
-            return _name + " - " + _data;
-        };
-        
-    }
+    /**
+     * Given the node and graph, renders itself
+     * 
+     * @param {type} node
+     * @param {type} graph
+     * @returns {undefined}
+     */
+    self.render = function (node, graph) {
+
+        if (_renderFunction === null) {
+            throw "Failure to render node! There's no render function defined!";
+        }
+
+        _renderFunction(node, graph);
+
+    };
+
+
+    /**
+     * returns the position of the node in x,y coordinates of the graph
+     * in the form of [x, y]
+     * 
+     * @returns {Array}
+     */
+    self.getPosition = function () {
+        return [_xPosition, _yPosition];
+    };
+
+
+    /**
+     * For testing at the moment, will eventually be removed
+     * TODO: Remove
+     * 
+     * @returns {String}
+     */
+    self.getContents = function () {
+        return _name + " - " + _data;
+    };
+
+}
