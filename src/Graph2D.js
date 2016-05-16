@@ -147,7 +147,7 @@ function Graph2D(canvas){
      * 
      * @returns {undefined}
      */
-    self.drawFrame = function(){
+    var _drawFrame = function(){
       
         // Make sure we have the correct resolution
         _canvasContext.canvas.width = _canvasContext.canvas.offsetWidth;
@@ -171,10 +171,10 @@ function Graph2D(canvas){
             
         }
         
-        window.requestAnimationFrame(self.drawFrame);
+        window.requestAnimationFrame(_drawFrame);
         
     };
     
-    self.drawFrame();
+    _drawFrame();
     
 }

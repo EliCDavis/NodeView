@@ -37,5 +37,5 @@ jspm_packages
 .node_repl_history
 
 # Netbeans project
-nbproject/*
-nbproject/project.properties
+#nbproject/*
+#nbproject/project.properties

@@ -27,9 +27,9 @@
 /**
  * The node that exists on the 2D graph
  * 
- * @returns {Node}
+ * @returns {Node2D}
  */
-function Node() {
+function Node2D() {
     
         var self = this;
 
