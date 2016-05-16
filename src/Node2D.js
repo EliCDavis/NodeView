@@ -108,22 +108,65 @@ function Node2D() {
 
 
         /**
-         * Override how the node will render by passing in your own method
-         * for rendering.
-         * 
-         * The method must have an argument for taking in the context of the
-         * canvas that it will render too.
-         * 
-         * @param {function(CanvasRenderingContext2D)} method
-         * @returns {undefined}
+         * Boolean function that takes the x and y coordinates of the mouse
+         * and determines whether or not the node was clicked
+         * @type method
          */
-        self.setRenderFunction = function(method){
+        var _clickDetectionfunction = null;
+
+
+        /**
+         * Boolean method given an x and y mouse position determines whether or
+         * not the node was actually clicked
+         * 
+         * @param {type} mouseX
+         * @param {type} mouseY
+         * @returns {Boolean}
+         */
+        self.wasClicked = function(mouseX, mouseY){
             
-            if(method === null){
-                throw "Error setting render functino for Node! Attempting to add a null method";
+            if(_clickDetectionfunction !== null || _clickDetectionfunction !== undefined){
+                
+                var result = _clickDetectionfunction(mouseX, mouseY);
+
+                // If the method actually returned a boolean value
+                if(result === true || result === false){
+                    return result;
+                }
+                
             }
             
-            _renderFunction = method;
+            return false;
+            
+        };
+
+
+        /**
+         * Override how the node will render and what is considered a mouse
+         * click by passing your own methods for rendering and click detection.
+         * 
+         * The render method must have an argument for taking in the context of 
+         * the canvas that it will render too.
+         * 
+         * The click detection method must take 4 arguements.. TODO: Finish.
+         * 
+         * @param {function(CanvasRenderingContext2D)} renderMethod
+         * @param {function(withinNodeMethod)} withinNodeMethod method for 
+         * determining whether of not a node has been clicked.
+         * @returns {undefined}
+         */
+        self.setRenderFunction = function(renderMethod, withinNodeMethod){
+            
+            if(renderMethod === null){
+                throw "Error setting render funciton for Node! Attempting to add a null render method";
+            }
+            
+            if(withinNodeMethod === null){
+                throw "Error setting render funciton for Node! Attempting to add a null click detection method";
+            }
+            
+            _renderFunction = renderMethod;
+            _clickDetectionfunction = withinNodeMethod;
         
         };
         

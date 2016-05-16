@@ -78,9 +78,38 @@ function Graph2D(canvas){
     var _canvasContext = null;
     
     
+    /**
+     * Add's all the event listeners to the canvas for user interaction.
+     * 
+     * @param {<canvas>} cvs The canvas element on the page
+     * @returns {undefined}
+     */
+    var _initializeGraph = function(cvs){
+        
+        // Figure out what Node was clicked (if any) and call their onclick function
+        cvs.addEventListener('click', function(event) {
+        
+            for(var i = 0; i < _nodes.length; i ++){
+                
+                if(_nodes[i].wasClicked(event.clientX, event.clientY)){ // TODO: This is probably wrong
+                    if(_nodes[i].onclick !== null || _nodes[i].onclick){
+                        _nodes[i].onclick();
+                    }
+                }
+                
+            }
+        
+            console.log(event);
+        
+        }, false);
+        
+    };
+    
+    
     // Only grabe the context if we have a canvas to grab from
     if(canvas !== null && canvas !== undefined){
         _canvasContext = canvas.getContext("2d");
+        _initializeGraph(canvas);
     }
 
 
@@ -107,11 +136,11 @@ function Graph2D(canvas){
 
     /**
      * Creates a new empty node and adds it to the graph immediately
-     * @returns {Node}
+     * @returns {Node2D}
      */
     self.createNode = function(){
       
-        var node = new Node();
+        var node = new Node2D();
         
         _nodes.push(node);
         
@@ -124,7 +153,7 @@ function Graph2D(canvas){
      * Renders the given node by the default method that the canvas has set 
      * for itself.
      * 
-     * @param {Node} node
+     * @param {Node2D} node
      * @param {CanvasRenderingContext2D} ctx
      * @param {Number} scale
      * @param {Array} graphPos
