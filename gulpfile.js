@@ -4,33 +4,48 @@
  * and open the template in the editor.
  */
 
-var gulp =          require('gulp');
-var browserify =    require("browserify");
-var source =        require("vinyl-source-stream");
-var uglify =        require("gulp-uglify");
-var streamify =     require("gulp-streamify");
-var minify =        require('gulp-minify');
-var concat =        require('gulp-concat');
+var gulp = require('gulp');
+var browserify = require("browserify");
+var source = require("vinyl-source-stream");
+var uglify = require("gulp-uglify");
+var streamify = require("gulp-streamify");
+var minify = require('gulp-minify');
+var concat = require('gulp-concat');
 
 
-gulp.task('build', function() {
-  gulp.src('./src/*.js')
-    .pipe(concat('nodeview.min.js'))
-    .pipe(uglify())
-    .pipe(gulp.dest('./dist/'));
+gulp.task('build-all', function () {
+    
+    gulp.src('./src/*.js')
+            .pipe(concat('nodeview.all.min.js'))
+            .pipe(uglify())
+            .pipe(gulp.dest('./dist/'));
+
+    gulp.src('./src/*.js')
+            .pipe(concat('nodeview.all.js'))
+            .pipe(gulp.dest('./dist/'));
+    
+    gulp.src(['./src/*2D.js', './src/Util.js'])
+            .pipe(concat('nodeview.2D.min.js'))
+            .pipe(uglify())
+            .pipe(gulp.dest('./dist/'));
+    
+    gulp.src(['./src/*2D.js', './src/Util.js'])
+            .pipe(concat('nodeview.2D.js'))
+            .pipe(gulp.dest('./dist/'));
+
 });
 
 
 gulp.task('default', function () {
     gulp.src('./src/*.js')
-    .pipe(concat('nodeview.min.js'))
-    .pipe(uglify())
-    .pipe(gulp.dest('./demo/'));
+            .pipe(concat('nodeview.min.js'))
+            .pipe(uglify())
+            .pipe(gulp.dest('./demo/'));
 });
 
 
-gulp.task('dev', function(){
-   gulp.src('./src/*.js')
-    .pipe(concat('nodeview.min.js'))
-    .pipe(gulp.dest('./demo/'));
+gulp.task('dev', function () {
+    gulp.src('./src/*.js')
+            .pipe(concat('nodeview.min.js'))
+            .pipe(gulp.dest('./demo/'));
 });

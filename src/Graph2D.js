@@ -85,6 +85,104 @@ function Graph2D(canvas){
     self.getContext = function(){
         return _canvasContext;
     };
+
+
+    /**
+     * The current status of the user's mouse.
+     * Can either be: 
+     *      free        The user isn't trying to interact with the elemnts on the graph
+     *      dragging    The user is currentely dragging something
+     *      hold        The user has clicked down on a node but hasn't moved it yet.
+     * @type String
+     */
+    var _currentMouseState = "free";
+
+
+    /**
+     * 
+     * @type Node2D|Graph2D
+     */
+    var _itemBeingDraggedOnCanvas = null;
+
+
+    var _mouseUpCalled = function (event) {
+        
+        if(_currentMouseState === "dragging"){
+            _itemBeingDraggedOnCanvas = null;
+            _currentMouseState = "free";
+            return;
+        }
+        
+        var coords = self.getContext().canvas.relMouseCoords(event);
+        
+        // Figure out what Node was clicked (if any) and call their onclick function
+        _nodes.forEach(function (node) {
+
+            if (node.wasClicked(self, [coords.x, coords.y])) {
+                if (node.onclick !== null && node.onclick !== undefined) {
+                    node.onclick();
+                }
+            }
+
+        });
+        
+    };
+    
+    
+    var _mouseDownCalled = function (event) {
+        
+        var coords = self.getContext().canvas.relMouseCoords(event);
+        
+        
+        // Figure out what Node was clicked (if any) and then begin dragging appropriatlly
+        _nodes.forEach(function (node) {
+
+            if (node.wasClicked(self, [coords.x, coords.y])) {
+                        console.log(_currentMouseState);
+
+                _currentMouseState = "hold";
+                _itemBeingDraggedOnCanvas = {"item":node, "itemPos":node.getPosition(), "mousePos":[coords.x, coords.y] };
+                
+            }
+
+        });
+        
+    };
+    
+    
+    var _mouseOutCalled = function (event) {
+        
+    };
+    
+    
+    var _mouseMoveCalled = function (event) {
+        
+        var coords = self.getContext().canvas.relMouseCoords(event);
+        
+        if(_currentMouseState === "hold"){
+            _currentMouseState = "dragging";
+        }
+        
+        if(_currentMouseState === "dragging"){
+            
+            var orgPos = _itemBeingDraggedOnCanvas["itemPos"];
+            var orgMousePos = _itemBeingDraggedOnCanvas["mousePos"];
+        
+            _itemBeingDraggedOnCanvas["item"].setPosition(coords.x + (orgPos[0] - orgMousePos[0]), coords.y + (orgPos[1] - orgMousePos[1]));
+        
+        }
+        
+    };
+    
+    
+    var _mouseWheelCalled = function (event) {
+        
+    };
+    
+    
+    var _doubleClickCalled = function (event) {
+        
+    };
     
     
     /**
@@ -95,22 +193,29 @@ function Graph2D(canvas){
      */
     var _initializeGraph = function(cvs){
         
-        // Figure out what Node was clicked (if any) and call their onclick function
-        cvs.addEventListener('click', function(event) {
+        cvs.addEventListener('mouseup', function(e) {
+            _mouseUpCalled(e);
+        });
         
-            var coords = cvs.relMouseCoords(event);
+        cvs.addEventListener('mousedown', function (e) {
+            _mouseDownCalled(e);
+        });
         
-            _nodes.forEach(function(node){
-                
-                if(node.wasClicked(self, [coords.x, coords.y])){
-                    if(node.onclick !== null && node.onclick !== undefined){
-                        node.onclick();
-                    }
-                }
-                
-            });
+        cvs.addEventListener('mouseout', function (e) {
+            _mouseOutCalled(e);
+        });
         
-        }, false);
+        cvs.addEventListener('mousemove', function (e) {
+            _mouseMoveCalled(e);
+        });
+        
+        cvs.addEventListener('mousewheel', function (e) {
+            _mouseWheelCalled(e);
+        });
+        
+        cvs.addEventListener('dblclick',function(e){
+            _doubleClickCalled(e);
+        });
         
     };
     
@@ -158,8 +263,9 @@ function Graph2D(canvas){
         var scale = graph.getScale();
         var nodeSize = node.getRenderData()['size'];
         
-        var startPos = [node.getPosition()[0] + graphPos[0] * scale,
-                        node.getPosition()[1] + graphPos[1] * scale];
+        var startPos = [(node.getPosition()[0]-(nodeSize[0]/2) + graphPos[0]) * scale,
+                        (node.getPosition()[1]-(nodeSize[1]/2) + graphPos[1]) * scale];
+                    
                     
         graph.getContext().fillStyle=node.getRenderData()['color'];
         graph.getContext().fillRect(
@@ -178,13 +284,13 @@ function Graph2D(canvas){
         var scale = graph.getScale();
         var nodeSize = node.getRenderData()['size'];
         
-        var startPos = [node.getPosition()[0] + graphPos[0] * scale,
-                        node.getPosition()[1] + graphPos[1] * scale];
+        var startPos = [node.getPosition()[0]-(nodeSize[0]/2) + graphPos[0] * scale,
+                        node.getPosition()[1]-(nodeSize[1]/2) + graphPos[1] * scale];
                     
         var endPos = [nodeSize[0] * scale,
                       nodeSize[1] * scale];
                   
-        return pointsInsideRect([startPos[0], startPos[1], endPos[0]-startPos[0], endPos[1]-startPos[1]] , mousePos);
+        return pointsInsideRect([startPos[0], startPos[1], endPos[0], endPos[1]] , mousePos);
     };
     
 

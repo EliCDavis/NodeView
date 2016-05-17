@@ -241,6 +241,12 @@ function Node2D() {
     self.getPosition = function () {
         return [_xPosition, _yPosition];
     };
+    
+    
+    self.setPosition = function(x, y){
+        _xPosition = x;
+        _yPosition = y;
+    };
 
 
     /**

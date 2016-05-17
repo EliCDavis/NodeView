@@ -50,7 +50,7 @@
         canvasX = event.pageX - totalOffsetX;
         canvasY = event.pageY - totalOffsetY;
 
-        return {x: canvasX, y: canvasY}
+        return {x: canvasX, y: canvasY};
     }
     HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
 
@@ -67,17 +67,15 @@
 function pointsInsideRect(rect, point) {
 
     // Make sure rect is valid
-    if(rect === null || rect === undefined || rect.length === null || 
-       rect.length === undefined || rect.length !== 4){
-        throw "Invalid rect argument! Expecting array in format [x, y, width, \
-                height].  Instead recieved: "+rect;
+    if (rect === null || rect === undefined || rect.length === null ||
+            rect.length === undefined || rect.length !== 4) {
+        throw "Invalid rect argument! Expecting array in format [x, y, width, height].  Instead recieved: " + rect;
     }
-    
+
     // Make sure point is valid
-    if(point === null || point === undefined || point.length === null || 
-       point.length === undefined || point.length !== 2){
-        throw "Invalid point argument! Expecting array in format [x, y]. \
-                Instead recieved: "+point;
+    if (point === null || point === undefined || point.length === null ||
+            point.length === undefined || point.length !== 2) {
+        throw "Invalid point argument! Expecting array in format [x, y].  Instead recieved: " + point;
     }
 
     if (rect[0] <= point[0] && point[0] <= rect[0] + rect[2]) {
@@ -85,8 +83,6 @@ function pointsInsideRect(rect, point) {
             return true;
         }
     }
-
-    // console.log(point +" not in "+rect);
 
     return false;
 
