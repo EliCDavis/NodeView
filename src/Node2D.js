@@ -82,6 +82,13 @@ function Node2D() {
      * @type Array
      */
     var _children = [];
+    
+    
+    /**
+     * The current parent of the node.
+     * @type Node2D
+     */
+    var _parent = null;
 
 
     /**
@@ -100,7 +107,37 @@ function Node2D() {
      * @type Array
      */
     var _groupNodes = [];
+    
+    
+    /**
+     * The radius of the node, the amount of free space around the node
+     * that would be kept free from other nodes
+     * 
+     * @type Number
+     */
+    var _radius = 1;
 
+    
+    /**
+     * Set's the radius of the node
+     * 
+     * @param {type} r radius the node will take on
+     * @returns {undefined}
+     */
+    self.setRadius = function(r){
+        _radius = r;
+    };
+    
+    
+    /**
+     * Get the radius the node is currentely operating by
+     * 
+     * @returns {r|Number}
+     */
+    self.getRadius = function(){
+        return _radius;
+    };
+    
 
     /**
      * Method called when the node was clicked on the canvas
@@ -243,6 +280,13 @@ function Node2D() {
     };
     
     
+    /**
+     * Set the current position of the node in the graph
+     * 
+     * @param {Number} x The x position from the top left corner of the graph
+     * @param {Number} y The y position from the top left corner of the graph
+     * @returns {undefined}
+     */
     self.setPosition = function(x, y){
         _xPosition = x;
         _yPosition = y;
@@ -259,4 +303,79 @@ function Node2D() {
         return _name + " - " + _data;
     };
 
+
+    self.addLink = function(linkNode){
+        
+        if(linkNode === null || linkNode === undefined){
+            throw "Failure to link node!  Link node was: "+linkNode;
+            return;
+        }
+        
+        _links.push(linkNode);
+        
+    };
+    
+    self.getLinks = function(){
+        return _links;
+    };
+    
+    self.setParent = function(newParent){
+        
+        // TODO: Make sure we're not setting one of our children or children childrens as our parent.
+        
+        // Make sure our parent knows we're leaving them for another..
+        if(_parent !== null && _parent !== undefined){
+            _parent.removeChild(self);
+        }
+        
+        _parent = newParent;
+        
+        if(_parent.getChildren().indexOf(self) === -1){
+            _parent.addChild(self);
+        }
+        
+    };
+    
+    
+    self.getParent = function(){
+        return _parent;
+    };
+    
+    
+    self.addChild = function(child){
+        
+        // TODO: Make sure this child does not exist ANYWHERE on the family tree
+        
+        // Make sure we don't already have the child
+        if(_children.indexOf(child) !== -1){
+            console.log("We already have that node as a child; ",child);
+            return;
+        }
+        
+        _children.push(child);
+        
+        if(child.getParent() !== self){
+            child.setParent(self);
+        }
+        
+    };
+    
+    
+    self.getChildren = function(){
+        return _children;
+    };
+    
+    
+    self.removeChild = function(child){
+        
+        var index = _children.indexOf(child);
+        
+        if(index === -1){
+            throw "Failure to remove child! Trying to remove a child we don't have!";
+        }
+        
+        _children.splice(index, 1);
+        
+    };
+    
 }

@@ -25,32 +25,40 @@
 
 (function () {
 
+    // IE7 and 8 support for indexOf
+    Array.prototype.indexOf || (Array.prototype.indexOf = function (d, e) {
+        var a;
+        if (null == this)
+            throw new TypeError('"this" is null or not defined');
+        var c = Object(this),
+                b = c.length >>> 0;
+        if (0 === b)
+            return -1;
+        a = +e || 0;
+        Infinity === Math.abs(a) && (a = 0);
+        if (a >= b)
+            return -1;
+        for (a = Math.max(0 <= a ? a : b - Math.abs(a), 0); a < b; ) {
+            if (a in c && c[a] === d)
+                return a;
+            a++;
+        }
+        return -1;
+    });
+
     /**
      * Converts global coordinates to canvas relative coordinates
      * http://stackoverflow.com/questions/55677/how-do-i-get-the-coordinates-of-a-mouse-click-on-a-canvas-element
      * 
-     * TODO: Check validity of function, (test)
      * TODO: Optimize
      * 
      * @param {type} event
      * @returns {Util_L26.relMouseCoords.UtilAnonym$0}
      */
     function relMouseCoords(event) {
-        var totalOffsetX = 0;
-        var totalOffsetY = 0;
-        var canvasX = 0;
-        var canvasY = 0;
-        var currentElement = this;
-
-        do {
-            totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
-            totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
-        } while (currentElement = currentElement.offsetParent)
-
-        canvasX = event.pageX - totalOffsetX;
-        canvasY = event.pageY - totalOffsetY;
-
-        return {x: canvasX, y: canvasY};
+        
+        var rect = this.getBoundingClientRect();
+        return {x: event.clientX  - rect.left, y: event.clientY  - rect.top};
     }
     HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
 
@@ -83,7 +91,7 @@ function pointsInsideRect(rect, point) {
             return true;
         }
     }
-
+    
     return false;
 
 }

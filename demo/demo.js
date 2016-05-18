@@ -26,5 +26,12 @@
 (function(){
     var graph = new Graph2D(document.getElementById("cv"));
     
-    graph.createNode();
+    var node1 = graph.createNode();
+    var node2 = graph.createNode();
+    var node3 = graph.createNode();
+    
+    node3.addChild(node2);
+    node3.addChild(node1);
+    graph.linkNodes(node1, node2);
+    
 })();

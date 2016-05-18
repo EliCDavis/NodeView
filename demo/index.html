@@ -11,16 +11,25 @@ and open the template in the editor.
         
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        
+        <link href='https://fonts.googleapis.com/css?family=Arizonia' rel='stylesheet' type='text/css'>
         <style>
             * { margin: 0; padding: 0;}
 
-            body, html { height:100%; }
+            body, html { height:100%; overflow: hidden}
 
             #cv {
                 position:absolute;
-                width:100%;
+                width:80%;
                 height:100%;
+            }
+            #sidebar {
+                height:100%;
+                width:20%;
+                display: inline-block;
+                background-color: #6A8D9D;
+                border-right-width: 0.4em;
+                border-right-style: solid;
+                border-right-color: #466675;
             }
         </style>
 
@@ -28,6 +37,15 @@ and open the template in the editor.
     
     <body>
         
+        <div id="sidebar">
+            <br/>
+            <center>
+                <h1 style="font-family: 'Arizonia', cursive; font-size: 450%; color:#F5F5F5; padding: 3%;">
+                    Node View
+                    <small style="font-family: 'serif'; font-size: 40%; color:#F5F5F5; padding: 2%;">Go on, touch 'em.</small>
+                </h1>
+            </center>
+        </div>
         
         <canvas id="cv">
             You don't support Canvas from HTML 5.  Upgrade your browser dude jeez
