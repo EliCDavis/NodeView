@@ -151,17 +151,23 @@ function Graph2D(canvas){
         
         var coords = _mouseToGraphCoordinates(event);
         
+        _currentMouseState = "hold";
+
         // Figure out what Node was clicked (if any) and then begin dragging appropriatlly
         _nodes.forEach(function (node) {
 
             if (node.wasClicked(self, [coords.x, coords.y])) {
 
-                _currentMouseState = "hold";
-                _itemBeingDraggedOnCanvas = {"item":node, "itemPos":node.getPosition(), "mousePos":[coords.x, coords.y] };
+                _itemBeingDraggedOnCanvas = {"item":node, "itemPos":node.getPosition(), "mousePos":[coords.x, coords.y], "itemType":"node" };
                 
             }
 
         });
+        
+        // If we didn't grab a node then we've grabbed the canvas
+        if(_itemBeingDraggedOnCanvas === null){
+            _itemBeingDraggedOnCanvas = {"item":self, "itemPos":self.getPosition(), "mousePos":[coords.x, coords.y], "itemType":"graph"};
+        }
         
     };
     
@@ -177,7 +183,6 @@ function Graph2D(canvas){
     
     var _mouseMoveCalled = function (event) {
         
-        var coords = _mouseToGraphCoordinates(event);
         
         if(_currentMouseState === "hold"){
             _currentMouseState = "dragging";
@@ -188,10 +193,27 @@ function Graph2D(canvas){
             var orgPos = _itemBeingDraggedOnCanvas["itemPos"];
             var orgMousePos = _itemBeingDraggedOnCanvas["mousePos"];
         
-            _itemBeingDraggedOnCanvas["item"].setPosition(coords.x + (orgPos[0] - orgMousePos[0]), coords.y + (orgPos[1] - orgMousePos[1]));
-        
+            if (_itemBeingDraggedOnCanvas["itemType"] === "node") {
+                
+                var coords = _mouseToGraphCoordinates(event);
+
+                _itemBeingDraggedOnCanvas["item"].setPosition(coords.x + (orgPos[0] - orgMousePos[0]), coords.y + (orgPos[1] - orgMousePos[1]));
+                
+            } 
+
+            if (_itemBeingDraggedOnCanvas["itemType"] === "graph") {
+
+                var coords = self.getContext().canvas.relMouseCoords(event);
+
+                var graphX = ((coords.x + orgPos[0]) / canvas.width) * (1 / _scale) * canvas.width;
+                var graphY = ((coords.y + orgPos[1]) / canvas.height) * (1 / _scale) * canvas.height;
+
+                coords = {"x": graphX, "y":graphY};
+
+                _itemBeingDraggedOnCanvas["item"].setPosition(coords.x + (orgPos[0] - orgMousePos[0]), coords.y + (orgPos[1] - orgMousePos[1]));
+            }
         }
-        
+
     };
     
     
@@ -262,6 +284,22 @@ function Graph2D(canvas){
         return [_xPosition, _yPosition];
     };
 
+
+    self.setPosition = function(x, y){
+        
+        if(!isNumeric(x)){
+            throw "Failed to set graph position!  Invalid x value: " + x;
+        }
+        
+        if(!isNumeric(y)){
+            throw "Failed to set graph position!  Invalid y value: " + y;
+        }
+        
+        _xPosition = x;
+        _yPosition = y;
+        
+        console.log(self.getPosition());
+    };
 
     /**
      * Returns the current scale in which positions and sizes the nodes are

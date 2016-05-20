@@ -95,3 +95,8 @@ function pointsInsideRect(rect, point) {
     return false;
 
 }
+
+// http://stackoverflow.com/questions/9716468/is-there-any-function-like-isnumeric-in-javascript-to-validate-numbers
+function isNumeric(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+}
