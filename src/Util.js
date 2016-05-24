@@ -61,6 +61,8 @@
         return {x: event.clientX  - rect.left, y: event.clientY  - rect.top};
     }
     HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
+    
+    
 
 })();
 
@@ -91,6 +93,8 @@ function pointsInsideRect(rect, point) {
             return true;
         }
     }
+    
+    //console.log(rect +" does not contain the point: "+point);
     
     return false;
 

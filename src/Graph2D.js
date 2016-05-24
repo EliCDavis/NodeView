@@ -74,8 +74,8 @@ function Graph2D(canvas){
         
         var coords = self.getContext().canvas.relMouseCoords(mouseEvent);
         
-        var graphX = ((coords.x+_xPosition) / canvas.width)*(1/_scale)*canvas.width;
-        var graphY = ((coords.y+_yPosition) / canvas.height)*(1/_scale)*canvas.height;
+        var graphX = (coords.x/_scale) - _xPosition;
+        var graphY = (coords.y/_scale) - _yPosition;
         
         return {"x":graphX, "y":graphY};
     };
@@ -159,7 +159,7 @@ function Graph2D(canvas){
             if (node.wasClicked(self, [coords.x, coords.y])) {
 
                 _itemBeingDraggedOnCanvas = {"item":node, "itemPos":node.getPosition(), "mousePos":[coords.x, coords.y], "itemType":"node" };
-                
+                console.log("Clicked");
             }
 
         });
@@ -210,7 +210,8 @@ function Graph2D(canvas){
 
                 coords = {"x": graphX, "y":graphY};
 
-                _itemBeingDraggedOnCanvas["item"].setPosition(coords.x + (orgPos[0] - orgMousePos[0]), coords.y + (orgPos[1] - orgMousePos[1]));
+                // TODO: Fix this
+                _itemBeingDraggedOnCanvas["item"].setPosition(coords.x - orgPos[0] + orgMousePos[0], coords.y - orgPos[1] + orgMousePos[1]);
             }
         }
 
@@ -298,7 +299,6 @@ function Graph2D(canvas){
         _xPosition = x;
         _yPosition = y;
         
-        console.log(self.getPosition());
     };
 
     /**
@@ -352,17 +352,14 @@ function Graph2D(canvas){
      */
     var _defaultNodeMouseDetection = function(node, graph, mousePos){
         
-        var graphPos = graph.getPosition();
-        var scale = graph.getScale();
         var nodeSize = node.getRenderData()['size'];
         
-        var startPos = [node.getPosition()[0]-(nodeSize[0]/2) + graphPos[0],
-                        node.getPosition()[1]-(nodeSize[1]/2) + graphPos[1]];
+        var startPos = [(node.getPosition()[0]-(nodeSize[0]/2) ),
+                        (node.getPosition()[1]-(nodeSize[1]/2) )];
                     
-        var endPos = [nodeSize[0],
-                      nodeSize[1]];
+        var endPos = [nodeSize[0], nodeSize[1]];
                   
-        return pointsInsideRect([startPos[0], startPos[1], endPos[0], endPos[1]] , mousePos);
+        return pointsInsideRect([startPos[0], startPos[1], endPos[0], endPos[1]], mousePos);
     };
     
 
@@ -380,7 +377,7 @@ function Graph2D(canvas){
         
         var graphSize = _getSize();
         var centerPos = [graphSize[0]/2, graphSize[1]/2];
-        node.setPosition(centerPos[0], centerPos[1]); 
+        node.setPosition(centerPos[0], centerPos[0]); 
        
         _nodes.push(node);
         
@@ -425,9 +422,26 @@ function Graph2D(canvas){
         _canvasContext.canvas.height = _canvasContext.canvas.offsetHeight;
 
         // Clear the canvas of anything rendered last frame
+        // TODO: Clear only what's been drawn over
         _canvasContext.clearRect(0, 0, _canvasContext.canvas.width, _canvasContext.canvas.height);
 
-        // Draw the lines between nodes
+        // Draw lines to show child parent relationship
+        _nodes.forEach(function (node) {
+            node.getChildren().forEach(function (link) {
+
+                var ctx = self.getContext();
+
+                ctx.beginPath();
+                ctx.moveTo((node.getPosition()[0] + _xPosition) * _scale,
+                            (node.getPosition()[1] + _yPosition) * _scale);
+                ctx.lineTo((link.getPosition()[0] + _xPosition) * _scale,
+                            (link.getPosition()[1] + _yPosition) * _scale);
+                ctx.stroke();
+
+            });
+        });
+
+        // Draw the lines between nodes to display links
         _nodes.forEach(function (node) {
             node.getLinks().forEach(function (link) {
 
