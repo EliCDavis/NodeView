@@ -60,10 +60,9 @@
         var rect = this.getBoundingClientRect();
         return {x: event.clientX  - rect.left, y: event.clientY  - rect.top};
     }
+    
     HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
     
-    
-
 })();
 
 

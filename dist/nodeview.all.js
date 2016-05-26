@@ -205,13 +205,10 @@ function Graph2D(canvas){
 
                 var coords = self.getContext().canvas.relMouseCoords(event);
 
-                var graphX = ((coords.x + orgPos[0]) / canvas.width) * (1 / _scale) * canvas.width;
-                var graphY = ((coords.y + orgPos[1]) / canvas.height) * (1 / _scale) * canvas.height;
+                var graphX = coords.x / _scale;
+                var graphY = coords.y / _scale;
 
-                coords = {"x": graphX, "y":graphY};
-
-                // TODO: Fix this
-                _itemBeingDraggedOnCanvas["item"].setPosition(coords.x - orgPos[0] + orgMousePos[0], coords.y - orgPos[1] + orgMousePos[1]);
+                _itemBeingDraggedOnCanvas["item"].setPosition(graphX - orgMousePos[0], graphY - orgMousePos[1]);
             }
         }
 
@@ -377,7 +374,7 @@ function Graph2D(canvas){
         
         var graphSize = _getSize();
         var centerPos = [graphSize[0]/2, graphSize[1]/2];
-        node.setPosition(centerPos[0], centerPos[0]); 
+        node.setPosition(centerPos[0], centerPos[1]); 
        
         _nodes.push(node);
         
@@ -424,6 +421,15 @@ function Graph2D(canvas){
         // Clear the canvas of anything rendered last frame
         // TODO: Clear only what's been drawn over
         _canvasContext.clearRect(0, 0, _canvasContext.canvas.width, _canvasContext.canvas.height);
+
+
+        // Draw center for debugging purposes currentely
+        self.getContext().fillRect(
+                self.getPosition()[0]*_scale,
+                self.getPosition()[1]*_scale,
+                10*_scale,
+                10*_scale
+                );
 
         // Draw lines to show child parent relationship
         _nodes.forEach(function (node) {
@@ -920,10 +926,9 @@ function Node2D() {
         var rect = this.getBoundingClientRect();
         return {x: event.clientX  - rect.left, y: event.clientY  - rect.top};
     }
+    
     HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
     
-    
-
 })();
 
 
