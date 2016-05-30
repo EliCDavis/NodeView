@@ -70,6 +70,11 @@ function Graph2D(canvas){
     var _nodes = [];
 
 
+    
+    var _nodeLinks = [];
+
+
+    
     var _mouseToGraphCoordinates = function(mouseEvent){
         
         var coords = self.getContext().canvas.relMouseCoords(mouseEvent);
@@ -98,11 +103,16 @@ function Graph2D(canvas){
     };
 
     
-    var _getSize = function(){
+    /**
+     * Returns the size of the canvas element in pixels.
+     * 
+     * @returns {Array}
+     */
+    var _getCanvasSize = function(){
         return [self.getContext().canvas.width, self.getContext().canvas.height];
     };
     
-
+    
     /**
      * The current status of the user's mouse.
      * Can either be: 
@@ -215,14 +225,39 @@ function Graph2D(canvas){
     };
     
     
+    /**
+     * Called whenever our mouse wheel moves.
+     * Used for keeping up with zoom of the graph.
+     * 
+     * @param {type} event
+     * @returns {undefined}
+     */
     var _mouseWheelCalled = function (event) {
         
+        var newScale = _scale;
+        var direction = 0;
+        
+        // Grab the new scale.
         if(event.deltaY > 0){
-            _scale -=.05;
+            direction = -0.05;
         } else {
-            _scale +=.05;
+            direction = 0.05;
         }
         
+        newScale += direction*newScale;
+        
+        var canvasSize = _getCanvasSize();
+
+        var oldCenter = [canvasSize[0] * (1/_scale) * 0.5, canvasSize[1] * (1/_scale) * 0.5];
+        var newCenter = [canvasSize[0] * (1/newScale) * 0.5, canvasSize[1] * (1/newScale) * 0.5];
+        
+        var curPos = self.getPosition();
+
+        // Move the position to keep what was in our center in the old scale in the center of our new scale
+        self.setPosition(curPos[0] + (newCenter[0] - oldCenter[0]), curPos[1]+ (newCenter[1] - oldCenter[1]));
+        
+        _scale = newScale;
+
     };
     
     
@@ -352,7 +387,7 @@ function Graph2D(canvas){
         var nodeSize = node.getRenderData()['size'];
         
         var startPos = [(node.getPosition()[0]-(nodeSize[0]/2) ),
-                        (node.getPosition()[1]-(nodeSize[1]/2) )];
+                        (node.getPosition()[1]-(nodeSize[1]/2) ) ];
                     
         var endPos = [nodeSize[0], nodeSize[1]];
                   
@@ -372,9 +407,9 @@ function Graph2D(canvas){
         node.setRenderDataByKey('color', '#6991AC');
         node.setRenderFunction(_defaultNodeRender, _defaultNodeMouseDetection);
         
-        var graphSize = _getSize();
+        var graphSize = _getCanvasSize();
         var centerPos = [graphSize[0]/2, graphSize[1]/2];
-        node.setPosition(centerPos[0], centerPos[1]); 
+        node.setPosition(centerPos[0]*(1/_scale), centerPos[1]*(1/_scale)); 
        
         _nodes.push(node);
         
@@ -389,20 +424,34 @@ function Graph2D(canvas){
      * 
      * @param {Node2D} n1
      * @param {Node2D} n2
+     * @param {*} linkData OPTIONAL: any extra information you'd like to store about the 
+     * link (i.e. Distance between the two, relationship, etc..)
      * @returns {undefined}
      */
-    self.linkNodes = function(n1, n2){
-      
+    self.linkNodes = function(n1, n2, linkData){
+    
+        // Make sure the nodes are not null
         if(n1 === null || n1 === undefined){
             throw "Failure to link! The first node passed in to link was: "+n1;
         }
         
+        // Make sure the nodes are not null
         if(n2 === null || n2 === undefined){
             throw "Failure to link! The second node passed in to link was: "+n2;
         }
-        
+
+        // TODO: Make sure the link does not already exist
+
+        // Tell the nodes their linked
+        // TODO: Review and make sure doing this even makes sense
         n1.addLink(n2);
         n2.addLink(n1);
+
+        // Create our link for the graph to keep up with.
+        _nodeLinks.push({
+            "nodes": [n1, n2],
+            "linkData": linkData
+        });
         
     };
     
@@ -448,19 +497,17 @@ function Graph2D(canvas){
         });
 
         // Draw the lines between nodes to display links
-        _nodes.forEach(function (node) {
-            node.getLinks().forEach(function (link) {
+        _nodeLinks.forEach(function (link) {
 
-                var ctx = self.getContext();
+            var ctx = self.getContext();
 
-                ctx.beginPath();
-                ctx.moveTo((node.getPosition()[0] + _xPosition) * _scale,
-                            (node.getPosition()[1] + _yPosition) * _scale);
-                ctx.lineTo((link.getPosition()[0] + _xPosition) * _scale,
-                            (link.getPosition()[1] + _yPosition) * _scale);
-                ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo((link.nodes[0].getPosition()[0] + _xPosition) * _scale,
+                        (link.nodes[0].getPosition()[1] + _yPosition) * _scale);
+            ctx.lineTo((link.nodes[1].getPosition()[0] + _xPosition) * _scale,
+                        (link.nodes[1].getPosition()[1] + _yPosition) * _scale);
+            ctx.stroke();
 
-            });
         });
 
         // Draw the nodes them selves
