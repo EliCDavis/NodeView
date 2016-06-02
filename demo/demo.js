@@ -34,4 +34,8 @@
     node3.addChild(node1);
     graph.linkNodes(node1, node2);
     
+    for(var i = 0; i < 200; i ++){
+        graph.createNode();
+    }
+    
 })();

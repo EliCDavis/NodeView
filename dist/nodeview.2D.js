@@ -65,7 +65,7 @@ function Graph2D(canvas){
     /**
      * An array of nodes that the graph renders
      * 
-     * @type Array
+     * @type Node2D[]
      */
     var _nodes = [];
 
@@ -317,7 +317,12 @@ function Graph2D(canvas){
         return [_xPosition, _yPosition];
     };
 
-
+    /**
+     * 
+     * @param {type} x
+     * @param {type} y
+     * @returns {undefined}
+     */
     self.setPosition = function(x, y){
         
         if(!isNumeric(x)){
@@ -333,6 +338,7 @@ function Graph2D(canvas){
         
     };
 
+
     /**
      * Returns the current scale in which positions and sizes the nodes are
      * to be multiplied by.
@@ -341,6 +347,119 @@ function Graph2D(canvas){
      */
     self.getScale = function(){
         return _scale;
+    };
+    
+    
+    // TODO: Optimize
+    var _spaceFree = function (p, radius) {
+        
+        var spaceFree = true;
+        
+        _nodes.forEach(function (n) {
+            var np = n.getPosition();
+            var distance = Math.sqrt(Math.pow(np[0] - p[0],2)+ 
+                                     Math.pow(np[1] - p[1],2));
+                    
+            if(distance < radius){
+                spaceFree = false;
+            }
+            
+        });
+        
+        return spaceFree;
+    };
+    
+    
+    /**
+     * Returns x and y coordinates that are atleast as far away as the radius
+     * from all other nodes on the graph.
+     * 
+     * @param {Number} radius how much space you'd like between all the points
+     * @returns {Array} [x, y] in graph (not canvas) coordinates
+     */
+    var _getFreeSpace = function(radius){
+    
+        if (_nodes.length === 0) {
+            var graphSize = _getCanvasSize();
+            var centerPos = [graphSize[0] / 2, graphSize[1] / 2];
+            return [centerPos[0] * (1 / _scale), centerPos[1] * (1 / _scale)];
+        }
+
+        // Average and find center of all nodes
+        var averageCenter = [0, 0];
+        
+        var total = [0,0];
+
+        // Total up all the positions
+        _nodes.forEach(function(node){
+            total[0] += node.getPosition()[0];
+            total[1] += node.getPosition()[1];
+        });
+
+        // Average the total to get center
+        averageCenter[0] = total[0] / _nodes.length;
+        averageCenter[1] = total[1] / _nodes.length;
+            
+    
+        // Generate a grid extending out from center with cells 1/4 size of radius
+        var stepSize = radius/4;
+        var stepHpot = Math.sqrt(stepSize*stepSize*2);
+        var curStep = 0;
+        
+        while(curStep < 10000){ // Dear god what am I doing.
+            
+            // Conceptually we're extending outwards in a grid fasion
+            // until we find a free grid space from the center
+            //       _ _ _ _ _   _
+            //      |_|_|_|_|_| 4 |
+            //    4 |_|     |_| 3 |__ Size of wall is 4
+            //    3 |_|  X  |_| 2 |   For a 5x5 grid.
+            //    2 |_|_ _ _|_| 1_|
+            //    1 |_|_|_|_|_|
+            //         1 2 3 4
+            var sizeOfWall = curStep+1;
+            
+            // Create the sides of the wall
+            var leftSide = [];
+            var rightSide = [];
+            var bottomSide = [];
+            var topSide = [];
+            
+            // Get the offset from the center
+            var offset = stepHpot*curStep;
+            
+            // Get the different starting positions due to offset
+            // (Four corners of square)
+            var bottomLeft = [averageCenter[0] - offset, averageCenter[1] - offset];
+            var bottomRight = [averageCenter[0] + offset, averageCenter[1] - offset];
+            var topLeft = [averageCenter[0] - offset, averageCenter[1] + offset];
+            var topRight = [averageCenter[0] + offset, averageCenter[1] + offset];
+            
+            // Add all the potential spaces
+            for(var i = 0; i < sizeOfWall; i ++){
+                leftSide.push([bottomLeft[0], bottomLeft[1] + (stepSize*i)]);
+                rightSide.push([topRight[0], topRight[1] - (stepSize*i)]);
+                bottomSide.push([bottomRight[0] - (stepSize*i), bottomRight[1]]);
+                topSide.push([topLeft[0]+ (stepSize*i), topLeft[1]]);
+            }
+            
+            var potentialSpaces = leftSide
+                                    .concat(rightSide)
+                                    .concat(bottomSide)
+                                    .concat(topSide);
+            
+            for(var i = 0; i < potentialSpaces.length; i ++){
+                if(_spaceFree(potentialSpaces[i], radius)){
+                    return potentialSpaces[i];
+                }
+            }
+            
+            curStep ++;
+            
+        }
+        
+        return [0,0];
+    
     };
     
 
@@ -404,12 +523,10 @@ function Graph2D(canvas){
         var node = new Node2D();
         
         node.setRenderDataByKey('size', [40, 40]);
+        node.setRadius(70);
         node.setRenderDataByKey('color', '#6991AC');
         node.setRenderFunction(_defaultNodeRender, _defaultNodeMouseDetection);
-        
-        var graphSize = _getCanvasSize();
-        var centerPos = [graphSize[0]/2, graphSize[1]/2];
-        node.setPosition(centerPos[0]*(1/_scale), centerPos[1]*(1/_scale)); 
+        node.setPosition(_getFreeSpace(70)); 
        
         _nodes.push(node);
         
@@ -526,9 +643,6 @@ function Graph2D(canvas){
     _drawFrame();
 
 }
-
-
-
 /* 
  * The MIT License
  *
@@ -819,6 +933,13 @@ function Node2D() {
      * @returns {undefined}
      */
     self.setPosition = function(x, y){
+        
+        if(x.constructor === Array){
+            _xPosition = x[0];
+            _yPosition = x[1];
+            return;
+        }
+        
         _xPosition = x;
         _yPosition = y;
     };

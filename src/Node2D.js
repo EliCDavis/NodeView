@@ -288,6 +288,13 @@ function Node2D() {
      * @returns {undefined}
      */
     self.setPosition = function(x, y){
+        
+        if(x.constructor === Array){
+            _xPosition = x[0];
+            _yPosition = x[1];
+            return;
+        }
+        
         _xPosition = x;
         _yPosition = y;
     };
