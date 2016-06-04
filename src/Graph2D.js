@@ -353,20 +353,19 @@ function Graph2D(canvas){
     // TODO: Optimize
     var _spaceFree = function (p, radius) {
         
-        var spaceFree = true;
-        
-        _nodes.forEach(function (n) {
-            var np = n.getPosition();
+        for(var i = 0; i <_nodes.length; i++){
+            var np = _nodes[i].getPosition();
+            
             var distance = Math.sqrt(Math.pow(np[0] - p[0],2)+ 
                                      Math.pow(np[1] - p[1],2));
                     
             if(distance < radius){
-                spaceFree = false;
+                return false;
             }
-            
-        });
+        }
         
-        return spaceFree;
+        return true;
+        
     };
     
     
@@ -417,7 +416,10 @@ function Graph2D(canvas){
             //    2 |_|_ _ _|_| 1_|
             //    1 |_|_|_|_|_|
             //         1 2 3 4
-            var sizeOfWall = curStep+1;
+            var sizeOfWall = (curStep*2);
+            if(curStep === 0){
+                sizeOfWall = 1;
+            }
             
             // Create the sides of the wall
             var leftSide = [];
@@ -426,7 +428,7 @@ function Graph2D(canvas){
             var topSide = [];
             
             // Get the offset from the center
-            var offset = stepHpot*curStep;
+            var offset = (curStep + .5)*stepSize;
             
             // Get the different starting positions due to offset
             // (Four corners of square)
@@ -457,6 +459,8 @@ function Graph2D(canvas){
             curStep ++;
             
         }
+        
+        console.log("Failure to find place! Sorry dude.");
         
         return [0,0];
     
@@ -628,17 +632,59 @@ function Graph2D(canvas){
         });
 
         // Draw the nodes them selves
-        _nodes.forEach(function (node) {
+        _nodes.forEach(function (n) {
 
-            if (node.getRenderFunction() !== null && node.getRenderFunction() !== undefined) {
-                node.render(node, self);
+            // Apply acceleration to the node based on realtive position to 
+            // center and other nodes.
+            var totalAcceleration = [0,0];
+            _nodes.forEach(function(oN){
+                
+                var dist = n.distanceFrom(oN.getPosition());
+                if(dist === 0){
+                    return;
+                }
+                
+                // Yeah you know what this is.
+                dist *= dist;
+                
+                // Yeah this is physics dude.
+                var masses = n.getRadius()*oN.getRadius();
+                
+                var attraction = (dist/masses)*0.1;
+                
+                var xDist = oN.getPosition()[0] - n.getPosition()[0];
+                var yDist = oN.getPosition()[0] - n.getPosition()[1];
+                var angle = Math.atan(yDist/xDist);
+                
+                // ¯\_(ツ)_/¯
+                var direction = 1;
+                if(xDist < 0 ){
+                    direction = -1;
+                } 
+                
+                totalAcceleration[0] += Math.cos(angle)*attraction*direction;
+                totalAcceleration[1] += Math.sin(angle)*attraction*direction;
+                
+            });
+
+            n.accelerate(totalAcceleration[0],totalAcceleration[1]);
+
+            // Translate the node this frame
+            n.translate((Date.now()-_lastDrawFrame)/1000);
+
+            // Render the node if it has a render function
+            if (n.getRenderFunction() !== null && n.getRenderFunction() !== undefined) {
+                n.render(n, self);
             }
 
         });
 
+        _lastDrawFrame = Date.now();
         window.requestAnimationFrame(_drawFrame);
 
     };
+
+    var _lastDrawFrame = Date.now();
 
     _drawFrame();
 

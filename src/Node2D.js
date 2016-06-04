@@ -117,6 +117,56 @@ function Node2D() {
      */
     var _radius = 1;
 
+
+    /**
+     * The current displacement of the node perframe of animatino
+     * @type Array
+     */
+    var _velocityVector = [0, 0];
+    
+    
+    self.accelerate = function(x, y){
+        
+        var maxSpeed = 100;
+        
+        _velocityVector[0] = Math.max(Math.min(maxSpeed, _velocityVector[0]+x), -maxSpeed);
+        _velocityVector[1] = Math.max(Math.min(maxSpeed, _velocityVector[1]+y), -maxSpeed);
+        
+    };
+    
+    
+    /**
+     * Called by the graph every animation frame.
+     * Node moves based on it's current velocity
+     * @param {Number} deltaTime the amount of time elapsed in seconds
+     * @returns {undefined}
+     */
+    self.translate = function(deltaTime){
+        _xPosition += _velocityVector[0]*deltaTime;
+        _yPosition += _velocityVector[1]*deltaTime;
+    };
+    
+
+    /**
+     * Utility function for quickly determining distance
+     * between the node and another point on the grpah.
+     * 
+     * @param {type} x
+     * @param {type} y
+     * @returns {Number}
+     */
+    self.distanceFrom = function(x,y){
+        
+        // Allow passing of 2 element array instead of 2 arguements for position
+        if(x.constructor === Array){
+            y = x[1];
+            x = x[0];
+        }
+        
+        return Math.sqrt(Math.pow(x-_xPosition, 2) + Math.pow(y-_yPosition, 2));
+        
+    };
+    
     
     /**
      * Set's the radius of the node
