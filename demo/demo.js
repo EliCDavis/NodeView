@@ -24,7 +24,54 @@
 
 
 (function(){
+    
     var graph = new Graph2D(document.getElementById("cv"));
+    
+    var backgroundRender = function(graph){
+        
+        var ctx = graph.getContext();
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        
+    };
+
+    var linkRender = function (g, startPos, endPos, link) {
+        var ctx = g.getContext();
+
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 10*g.getScale();
+        ctx.beginPath();
+        ctx.moveTo(startPos[0], startPos[1]);
+        ctx.lineTo(endPos[0],endPos[1]);
+        ctx.stroke();
+    };
+
+    var nodeRender = function (node, nodeCanvasPos, graph) {
+
+        var ctx = graph.getContext();
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.arc(nodeCanvasPos[0], 
+                nodeCanvasPos[1], 
+                node.getRadius()*graph.getScale()*.8, 
+                0, 
+                2 * Math.PI);
+        ctx.fill();
+        
+    };
+    
+    var nodeDetection = function(node, graph, mousePos){
+        
+        if(node.distanceFrom(mousePos) <= node.getRadius()*.8){
+            return true;
+        }
+        
+        return false;
+    };
+    
+    graph.setBackgroundRenderMethod(backgroundRender);
+    graph.setLinkRenderMethod(linkRender);
+    graph.setDefaultNodeRenderAndMouseDetection(nodeRender, nodeDetection);
     
     var node1 = graph.createNode();
     var node2 = graph.createNode();
@@ -34,8 +81,13 @@
     node3.addChild(node1);
     graph.linkNodes(node1, node2);
     
-    for(var i = 0; i < 200; i ++){
+    for (var i = 0; i < 200; i++) {
         graph.createNode();
     }
+
+//    setInterval(function () {
+//        graph.createNode();
+//    }, 10);
     
 })();
+

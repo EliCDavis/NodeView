@@ -27,6 +27,13 @@
 /**
  * A graph for displaying and interacting with nodes.
  * 
+ * The render steps are:
+ * > clear
+ * > drawbackground
+ * > draw node connections
+ * > draw nodes
+ * > post render
+ * 
  * @param {<canvas>} canvas
  * @returns {Graph2D}
  */
@@ -73,6 +80,66 @@ function Graph2D(canvas){
     
     var _nodeLinks = [];
 
+
+    /**
+     * The method that is called when we have cleared the canvas and is about
+     * to draw the next frame.
+     * 
+     * @type function
+     */
+    var _backgroundRenderMethod = null;
+
+    
+    var _linkRenderMethod = null;
+
+    
+    self.setLinkRenderMethod = function(renderMethod){
+        
+        if(typeof renderMethod !== "function"){
+            console.error("Failure to set Link Render Method! \
+                           Arguement must be typeof function!");
+            return;
+        }
+        
+        if(renderMethod.length !== 4){
+            console.error("Failure to set Link Render Method! \
+                           Method's arguement length must be 4 so it\
+                           can be passed the graph being rendered, node 1\
+                           position on canvas, node 2 position on canvas, and\
+                           any link data associated with them!");
+            return;
+        }
+        
+        _linkRenderMethod = renderMethod;
+        
+    };
+
+    /**
+     * Set the the method that is called when ever the canvas is about to be
+     * drawn to (after clearing it and before drawing nodes).
+     * The method must accept 1 argument being the Graph2D object that is doing
+     * the rendering.
+     * 
+     * @param {function} method
+     * @returns {undefined}
+     */
+    self.setBackgroundRenderMethod = function(method){
+        
+        if(typeof method !== "function"){
+            console.error("Failure to set Background Render Method! \
+                           Arguement must be typeof function!");
+            return;
+        }
+        
+        if(method.length !== 1){
+            console.error("Failure to set Background Render Method! \
+                           Method's arguement length must be 1 so it\
+                           can be passed the graph being rendered!");
+            return;
+        }
+        
+        _backgroundRenderMethod = method;
+    };
 
     
     var _mouseToGraphCoordinates = function(mouseEvent){
@@ -471,19 +538,21 @@ function Graph2D(canvas){
      * The default node rendering function assigned to all nodes upon creation
      * 
      * @param {Node2D} node The node being rendered
+     * @param {Array[x,y]} nodePosOnCanvas The nodes getPosition() returns it's
+     * position in graph coordinates.  nodePosOnCanvas is where the node is on
+     * canvas coordinates.
      * @param {Graph2D} graph The graph that the node is apart of
      * @returns {undefined}
      */
-    var _defaultNodeRender = function(node, graph){
+    var _defaultNodeRender = function(node, nodePosOnCanvas, graph){
         
         // TODO: do input santizing
         
-        var graphPos = graph.getPosition();
         var scale = graph.getScale();
         var nodeSize = node.getRenderData()['size'];
         
-        var startPos = [(node.getPosition()[0]-(nodeSize[0]/2) + graphPos[0]) * scale,
-                        (node.getPosition()[1]-(nodeSize[1]/2) + graphPos[1]) * scale];
+        var startPos = [nodePosOnCanvas[0] - ((nodeSize[0]/2) * scale),
+                        nodePosOnCanvas[1] - ((nodeSize[1]/2) * scale)];
                     
                     
         graph.getContext().fillStyle = node.getRenderData()['color'];
@@ -518,6 +587,40 @@ function Graph2D(canvas){
     };
     
 
+    self.setDefaultNodeRenderAndMouseDetection = function (renderer, detection) {
+
+        if (typeof renderer !== "function") {
+            console.error("Failure to set Node Render Method! \
+                           Arguement must be a function!");
+            return;
+        }
+
+        if (renderer.length !== 3) {
+            console.error("Failure to set Node Render Method! \
+                           Method's arguement length must be 3 so it\
+                           can be passed the node, it's position, and graph being rendered!");
+            return;
+        }
+        
+        if (typeof detection !== "function") {
+            console.error("Failure to set Node Click Detection Method! \
+                           Arguement must be a function!");
+            return;
+        }
+
+        if (detection.length !== 3) {
+            console.error("Failure to set Node Render Method! \
+                           Method's arguement length must be 2 so it\
+                           can be passed the node and graph being rendered!");
+            return;
+        }
+
+        _defaultNodeRender = renderer;
+        _defaultNodeMouseDetection = detection;
+
+    };
+
+
     /**
      * Creates a new empty node and adds it to the graph immediately
      * @returns {Node2D}
@@ -528,8 +631,8 @@ function Graph2D(canvas){
         
         node.setRenderDataByKey('size', [40, 40]);
         node.setRadius(70);
-        node.setRenderDataByKey('color', '#6991AC');
-        node.setRenderFunction(_defaultNodeRender, _defaultNodeMouseDetection);
+        node.setRenderDataByKey('color', '#FFFFFF');
+        //node.setRenderFunction(_defaultNodeRender, _defaultNodeMouseDetection);
         node.setPosition(_getFreeSpace(70)); 
        
         _nodes.push(node);
@@ -592,7 +695,10 @@ function Graph2D(canvas){
         // TODO: Clear only what's been drawn over
         _canvasContext.clearRect(0, 0, _canvasContext.canvas.width, _canvasContext.canvas.height);
 
-
+        if(_backgroundRenderMethod !== null && _backgroundRenderMethod !== undefined){
+            _backgroundRenderMethod(self);
+        }
+        self.getContext().fillStyle = "white";
         // Draw center for debugging purposes currentely
         self.getContext().fillRect(
                 self.getPosition()[0]*_scale,
@@ -620,13 +726,22 @@ function Graph2D(canvas){
         // Draw the lines between nodes to display links
         _nodeLinks.forEach(function (link) {
 
+            var startPos = [(link.nodes[0].getPosition()[0] + _xPosition) * _scale,
+                            (link.nodes[0].getPosition()[1] + _yPosition) * _scale];
+            
+            var endPos = [(link.nodes[1].getPosition()[0] + _xPosition) * _scale,
+                          (link.nodes[1].getPosition()[1] + _yPosition) * _scale];
+
+            if(_linkRenderMethod !== null && _linkRenderMethod !== undefined){
+                _linkRenderMethod(self, startPos, endPos, link);
+                return;
+            } 
+
             var ctx = self.getContext();
 
             ctx.beginPath();
-            ctx.moveTo((link.nodes[0].getPosition()[0] + _xPosition) * _scale,
-                        (link.nodes[0].getPosition()[1] + _yPosition) * _scale);
-            ctx.lineTo((link.nodes[1].getPosition()[0] + _xPosition) * _scale,
-                        (link.nodes[1].getPosition()[1] + _yPosition) * _scale);
+            ctx.moveTo(startPos[0], startPos[1]);
+            ctx.lineTo(endPos[0],endPos[1]);
             ctx.stroke();
 
         });
@@ -645,15 +760,18 @@ function Graph2D(canvas){
                 }
                 
                 // Yeah you know what this is.
-                dist *= dist;
+                var masses = Math.abs(n.getRadius() * oN.getRadius());
                 
                 // Yeah this is physics dude.
-                var masses = n.getRadius()*oN.getRadius();
+                var attraction = (masses / (dist * dist)) * 2.1;
                 
-                var attraction = (dist/masses)*0.1;
+                if(dist < n.getRadius()+oN.getRadius()){
+                    attraction *=-1;
+                }
                 
+                // Get the angle so we can apply the fource properly in x and y
                 var xDist = oN.getPosition()[0] - n.getPosition()[0];
-                var yDist = oN.getPosition()[0] - n.getPosition()[1];
+                var yDist = oN.getPosition()[1] - n.getPosition()[1];
                 var angle = Math.atan(yDist/xDist);
                 
                 // ¯\_(ツ)_/¯
@@ -662,6 +780,7 @@ function Graph2D(canvas){
                     direction = -1;
                 } 
                 
+                // Add to the acceleration.
                 totalAcceleration[0] += Math.cos(angle)*attraction*direction;
                 totalAcceleration[1] += Math.sin(angle)*attraction*direction;
                 
@@ -670,11 +789,19 @@ function Graph2D(canvas){
             n.accelerate(totalAcceleration[0],totalAcceleration[1]);
 
             // Translate the node this frame
-            n.translate((Date.now()-_lastDrawFrame)/1000);
+            n.translate((Date.now() - _lastDrawFrame)/1000);
+
+
+            var graphPos = self.getPosition();
+            var scale = self.getScale();
+            var pos = [(n.getPosition()[0] + graphPos[0]) * scale,
+                       (n.getPosition()[1] + graphPos[1]) * scale];
 
             // Render the node if it has a render function
             if (n.getRenderFunction() !== null && n.getRenderFunction() !== undefined) {
-                n.render(n, self);
+                n.render(n, pos, self);
+            } else {
+                _defaultNodeRender(n, pos, self);
             }
 
         });

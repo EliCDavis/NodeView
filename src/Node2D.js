@@ -127,11 +127,22 @@ function Node2D() {
     
     self.accelerate = function(x, y){
         
-        var maxSpeed = 100;
+        var maxSpeed = 3000;
         
         _velocityVector[0] = Math.max(Math.min(maxSpeed, _velocityVector[0]+x), -maxSpeed);
         _velocityVector[1] = Math.max(Math.min(maxSpeed, _velocityVector[1]+y), -maxSpeed);
         
+    };
+    
+    
+    var _decelerate = function(deltaTime){
+        
+        var xdir = _velocityVector[0] > 0 ? -1 : 1;
+        var ydir = _velocityVector[1] > 0 ? -1 : 1;
+        
+        //console.log(Math.sqrt(_velocityVector[0])*deltaTime*xdir);
+        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0]))*deltaTime*xdir;
+        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1]))*deltaTime*ydir;
     };
     
     
@@ -144,6 +155,7 @@ function Node2D() {
     self.translate = function(deltaTime){
         _xPosition += _velocityVector[0]*deltaTime;
         _yPosition += _velocityVector[1]*deltaTime;
+        _decelerate(deltaTime);
     };
     
 
@@ -308,13 +320,13 @@ function Node2D() {
      * @param {type} graph
      * @returns {undefined}
      */
-    self.render = function (node, graph) {
+    self.render = function (node, pos, graph) {
 
         if (_renderFunction === null) {
             throw "Failure to render node! There's no render function defined!";
         }
 
-        _renderFunction(node, graph);
+        _renderFunction(node, pos, graph);
 
     };
 
