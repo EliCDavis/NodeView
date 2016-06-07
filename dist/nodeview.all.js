@@ -233,10 +233,16 @@ function Graph2D(canvas){
         // Figure out what Node was clicked (if any) and then begin dragging appropriatlly
         _nodes.forEach(function (node) {
 
-            if (node.wasClicked(self, [coords.x, coords.y])) {
+            var wasClicked = false;
 
+            if(node.getClickDetectionFunction() === null){
+                wasClicked = _defaultNodeMouseDetection(node, self, [coords.x, coords.y]);
+            } else {
+                wasClicked = node.wasClicked(self, [coords.x, coords.y]);
+            }
+            
+            if(wasClicked){
                 _itemBeingDraggedOnCanvas = {"item":node, "itemPos":node.getPosition(), "mousePos":[coords.x, coords.y], "itemType":"node" };
-                console.log("Clicked");
             }
 
         });
@@ -945,7 +951,7 @@ function Node2D() {
     
     self.accelerate = function(x, y){
         
-        var maxSpeed = 3000;
+        var maxSpeed = 300;
         
         _velocityVector[0] = Math.max(Math.min(maxSpeed, _velocityVector[0]+x), -maxSpeed);
         _velocityVector[1] = Math.max(Math.min(maxSpeed, _velocityVector[1]+y), -maxSpeed);
@@ -959,8 +965,8 @@ function Node2D() {
         var ydir = _velocityVector[1] > 0 ? -1 : 1;
         
         //console.log(Math.sqrt(_velocityVector[0])*deltaTime*xdir);
-        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0]))*deltaTime*xdir;
-        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1]))*deltaTime*ydir;
+        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0]))*deltaTime*xdir*2;
+        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1]))*deltaTime*ydir*2;
     };
     
     
@@ -992,7 +998,7 @@ function Node2D() {
             y = x[1];
             x = x[0];
         }
-        
+        //console.log("running");
         return Math.sqrt(Math.pow(x-_xPosition, 2) + Math.pow(y-_yPosition, 2));
         
     };
@@ -1128,6 +1134,11 @@ function Node2D() {
      */
     self.getRenderFunction = function () {
         return _renderFunction;
+    };
+
+
+    self.getClickDetectionFunction = function(){
+        return _clickDetectionfunction;
     };
 
 

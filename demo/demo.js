@@ -62,11 +62,8 @@
     
     var nodeDetection = function(node, graph, mousePos){
         
-        if(node.distanceFrom(mousePos) <= node.getRadius()*.8){
-            return true;
-        }
-        
-        return false;
+        return (node.distanceFrom(mousePos) <= node.getRadius()*.8);
+             
     };
     
     graph.setBackgroundRenderMethod(backgroundRender);

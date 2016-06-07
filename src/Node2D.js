@@ -127,7 +127,7 @@ function Node2D() {
     
     self.accelerate = function(x, y){
         
-        var maxSpeed = 3000;
+        var maxSpeed = 300;
         
         _velocityVector[0] = Math.max(Math.min(maxSpeed, _velocityVector[0]+x), -maxSpeed);
         _velocityVector[1] = Math.max(Math.min(maxSpeed, _velocityVector[1]+y), -maxSpeed);
@@ -141,8 +141,8 @@ function Node2D() {
         var ydir = _velocityVector[1] > 0 ? -1 : 1;
         
         //console.log(Math.sqrt(_velocityVector[0])*deltaTime*xdir);
-        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0]))*deltaTime*xdir;
-        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1]))*deltaTime*ydir;
+        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0]))*deltaTime*xdir*2;
+        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1]))*deltaTime*ydir*2;
     };
     
     
@@ -174,7 +174,7 @@ function Node2D() {
             y = x[1];
             x = x[0];
         }
-        
+        //console.log("running");
         return Math.sqrt(Math.pow(x-_xPosition, 2) + Math.pow(y-_yPosition, 2));
         
     };
@@ -310,6 +310,11 @@ function Node2D() {
      */
     self.getRenderFunction = function () {
         return _renderFunction;
+    };
+
+
+    self.getClickDetectionFunction = function(){
+        return _clickDetectionfunction;
     };
 
 

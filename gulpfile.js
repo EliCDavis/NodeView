@@ -36,7 +36,7 @@ gulp.task('build-all', function () {
 });
 
 
-gulp.task('default', function () {
+gulp.task('run', function () {
     gulp.src('./src/*.js')
             .pipe(concat('nodeview.min.js'))
             .pipe(uglify())
@@ -44,7 +44,7 @@ gulp.task('default', function () {
 });
 
 
-gulp.task('dev', function () {
+gulp.task('debug', function () {
     gulp.src('./src/*.js')
             .pipe(concat('nodeview.min.js'))
             .pipe(gulp.dest('./demo/'));
