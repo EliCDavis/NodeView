@@ -233,10 +233,16 @@ function Graph2D(canvas){
         // Figure out what Node was clicked (if any) and then begin dragging appropriatlly
         _nodes.forEach(function (node) {
 
-            if (node.wasClicked(self, [coords.x, coords.y])) {
+            var wasClicked = false;
 
+            if(node.getClickDetectionFunction() === null){
+                wasClicked = _defaultNodeMouseDetection(node, self, [coords.x, coords.y]);
+            } else {
+                wasClicked = node.wasClicked(self, [coords.x, coords.y]);
+            }
+            
+            if(wasClicked){
                 _itemBeingDraggedOnCanvas = {"item":node, "itemPos":node.getPosition(), "mousePos":[coords.x, coords.y], "itemType":"node" };
-                console.log("Clicked");
             }
 
         });
@@ -632,7 +638,6 @@ function Graph2D(canvas){
         node.setRenderDataByKey('size', [40, 40]);
         node.setRadius(70);
         node.setRenderDataByKey('color', '#FFFFFF');
-        //node.setRenderFunction(_defaultNodeRender, _defaultNodeMouseDetection);
         node.setPosition(_getFreeSpace(70)); 
        
         _nodes.push(node);
