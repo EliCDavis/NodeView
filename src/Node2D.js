@@ -57,7 +57,10 @@ function Node2D() {
      * 
      * @type type
      */
-    var _renderingData = {};
+    var _renderingData = {
+        "$mouseOver" : false,
+        "$beingDragged": false
+    };
 
 
     /**
@@ -100,13 +103,10 @@ function Node2D() {
 
 
     /**
-     * A list of all nodes that this node is considered in a "group" with.
      * 
-     * TODO: Determine best method of dealing with nodes.
-     * 
-     * @type Array
+     * @type Number
      */
-    var _groupNodes = [];
+    var _groupId = null;
     
     
     /**
@@ -123,6 +123,11 @@ function Node2D() {
      * @type Array
      */
     var _velocityVector = [0, 0];
+    
+    
+    self.getGroupId = function(){
+        return _groupId;
+    };
     
     
     self.accelerate = function(x, y){
@@ -150,12 +155,19 @@ function Node2D() {
      * Called by the graph every animation frame.
      * Node moves based on it's current velocity
      * @param {Number} deltaTime the amount of time elapsed in seconds
-     * @returns {undefined}
+     * @returns {bool} whether or not the node actually moved
      */
     self.translate = function(deltaTime){
+        
+        if(_velocityVector[0] === 0 && _velocityVector[1] === 0){
+            return false;
+        }
+        
         _xPosition += _velocityVector[0]*deltaTime;
         _yPosition += _velocityVector[1]*deltaTime;
         _decelerate(deltaTime);
+    
+        return true;
     };
     
 

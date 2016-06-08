@@ -27,6 +27,8 @@
     
     var graph = new Graph2D(document.getElementById("cv"));
     
+    var galaxyColors = ["#00CED1","#8A2BE2","#00FA9A","#DC143C","#FA8072","#FFD700", "#FF00FF"];
+    
     var backgroundRender = function(graph){
         
         var ctx = graph.getContext();
@@ -49,7 +51,7 @@
     var nodeRender = function (node, nodeCanvasPos, graph) {
 
         var ctx = graph.getContext();
-        ctx.fillStyle = "white";
+        ctx.fillStyle = node.getRenderData()["color"];
         ctx.beginPath();
         ctx.arc(nodeCanvasPos[0], 
                 nodeCanvasPos[1], 
@@ -57,6 +59,30 @@
                 0, 
                 2 * Math.PI);
         ctx.fill();
+        
+        if(node.getRenderData()['$mouseOver']){
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(nodeCanvasPos[0],
+                    nodeCanvasPos[1],
+                    node.getRadius() * graph.getScale() * .8*.5,
+                    0,
+                    2 * Math.PI);
+            ctx.fill();
+        }
+        
+        if (node.getRenderData()['$beingDragged']) {
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(nodeCanvasPos[0],
+                    nodeCanvasPos[1],
+                    node.getRadius() * graph.getScale() * .8*.3,
+                    0,
+                    2 * Math.PI);
+            ctx.fill();
+        } 
+        
+        
         
     };
     
@@ -79,7 +105,9 @@
     graph.linkNodes(node1, node2);
     
     for (var i = 0; i < 200; i++) {
-        graph.createNode();
+        var node = graph.createNode();
+        node.setRenderDataByKey('color', galaxyColors[i%galaxyColors.length]);
+        node.setRadius(Math.random()*80 + 80);
     }
 
 //    setInterval(function () {

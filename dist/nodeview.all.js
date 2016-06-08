@@ -198,9 +198,24 @@ function Graph2D(canvas){
     var _itemBeingDraggedOnCanvas = null;
 
 
+    /**
+     * 
+     * @type MouseEvent
+     */
+    var _lastSeenMousePos = null;
+    
+
     var _mouseUpCalled = function (event) {
         
+        _lastSeenMousePos = event;
+        
         if(_currentMouseState === "dragging" ){
+            
+            // Update their render status
+            if (_itemBeingDraggedOnCanvas["itemType"] === "node") {
+                _itemBeingDraggedOnCanvas["item"].setRenderDataByKey("$beingDragged", false);
+            }
+            
             _itemBeingDraggedOnCanvas = null;
             _currentMouseState = "free";
             return;
@@ -224,7 +239,20 @@ function Graph2D(canvas){
     };
     
     
+    var _mouseOverNode = function (node, coords) {
+        
+        if (node.getClickDetectionFunction() === null) {
+            return _defaultNodeMouseDetection(node, self, [coords.x, coords.y]);
+        } else {
+            return node.wasClicked(self, [coords.x, coords.y]);
+        }
+        
+    };
+    
+    
     var _mouseDownCalled = function (event) {
+        
+        _lastSeenMousePos = event;
         
         var coords = _mouseToGraphCoordinates(event);
         
@@ -233,14 +261,8 @@ function Graph2D(canvas){
         // Figure out what Node was clicked (if any) and then begin dragging appropriatlly
         _nodes.forEach(function (node) {
 
-            var wasClicked = false;
+            var wasClicked = _mouseOverNode(node, coords);
 
-            if(node.getClickDetectionFunction() === null){
-                wasClicked = _defaultNodeMouseDetection(node, self, [coords.x, coords.y]);
-            } else {
-                wasClicked = node.wasClicked(self, [coords.x, coords.y]);
-            }
-            
             if(wasClicked){
                 _itemBeingDraggedOnCanvas = {"item":node, "itemPos":node.getPosition(), "mousePos":[coords.x, coords.y], "itemType":"node" };
             }
@@ -257,6 +279,8 @@ function Graph2D(canvas){
     
     var _mouseOutCalled = function (event) {
         
+        _lastSeenMousePos = null;
+        
         if(_currentMouseState === "dragging"){
             _currentMouseState = "free";
         }
@@ -266,9 +290,17 @@ function Graph2D(canvas){
     
     var _mouseMoveCalled = function (event) {
         
+        _lastSeenMousePos = event;
         
         if(_currentMouseState === "hold"){
+            
             _currentMouseState = "dragging";
+            
+            // Update their render status
+            if (_itemBeingDraggedOnCanvas["itemType"] === "node") {
+                 _itemBeingDraggedOnCanvas["item"].setRenderDataByKey("$beingDragged", true);
+            }
+            
         }
         
         if(_currentMouseState === "dragging"){
@@ -281,7 +313,7 @@ function Graph2D(canvas){
                 var coords = _mouseToGraphCoordinates(event);
 
                 _itemBeingDraggedOnCanvas["item"].setPosition(coords.x + (orgPos[0] - orgMousePos[0]), coords.y + (orgPos[1] - orgMousePos[1]));
-                
+               
             } 
 
             if (_itemBeingDraggedOnCanvas["itemType"] === "graph") {
@@ -638,7 +670,6 @@ function Graph2D(canvas){
         node.setRenderDataByKey('size', [40, 40]);
         node.setRadius(70);
         node.setRenderDataByKey('color', '#FFFFFF');
-        //node.setRenderFunction(_defaultNodeRender, _defaultNodeMouseDetection);
         node.setPosition(_getFreeSpace(70)); 
        
         _nodes.push(node);
@@ -682,6 +713,43 @@ function Graph2D(canvas){
             "nodes": [n1, n2],
             "linkData": linkData
         });
+        
+    };
+    
+    
+    var _getGravitationalPull = function(pos1, pos2, mass1, mass2){
+        
+        var xDist = pos2[0] - pos1[0];
+        var yDist = pos2[1] - pos1[1];
+        var dist = Math.sqrt( (xDist*xDist) + (yDist*yDist) );
+        
+        if(dist === 0){
+            return [0,0];
+        }
+
+        // Yeah you know what this is.
+        var masses = Math.abs(mass1 * mass2);
+
+        // Yeah this is physics dude.
+        var attraction = (masses / (dist * dist)) * 2.1;
+
+        // If we're too close then let's reject
+        if(dist < mass1+mass2){
+            attraction *=-5;
+        }
+
+        // Get the angle so we can apply the fource properly in x and y
+        var angle = Math.atan(yDist/xDist);
+
+        // ¯\_(ツ)_/¯
+        var direction = 1;
+        if(xDist < 0 ){
+            direction = -1;
+        } 
+
+        // Add to the acceleration.
+        return [Math.cos(angle)*attraction*direction, 
+                Math.sin(angle)*attraction*direction];
         
     };
     
@@ -760,43 +828,46 @@ function Graph2D(canvas){
             var totalAcceleration = [0,0];
             _nodes.forEach(function(oN){
                 
-                var dist = n.distanceFrom(oN.getPosition());
-                if(dist === 0){
-                    return;
-                }
-                
-                // Yeah you know what this is.
-                var masses = Math.abs(n.getRadius() * oN.getRadius());
-                
-                // Yeah this is physics dude.
-                var attraction = (masses / (dist * dist)) * 2.1;
-                
-                if(dist < n.getRadius()+oN.getRadius()){
-                    attraction *=-1;
-                }
-                
-                // Get the angle so we can apply the fource properly in x and y
-                var xDist = oN.getPosition()[0] - n.getPosition()[0];
-                var yDist = oN.getPosition()[1] - n.getPosition()[1];
-                var angle = Math.atan(yDist/xDist);
-                
-                // ¯\_(ツ)_/¯
-                var direction = 1;
-                if(xDist < 0 ){
-                    direction = -1;
-                } 
+                var pull = _getGravitationalPull(
+                    n.getPosition(),
+                    oN.getPosition(),
+                    n.getRadius(),
+                    oN.getRadius()
+                );
                 
                 // Add to the acceleration.
-                totalAcceleration[0] += Math.cos(angle)*attraction*direction;
-                totalAcceleration[1] += Math.sin(angle)*attraction*direction;
+                totalAcceleration[0] += pull[0];
+                totalAcceleration[1] += pull[1];
                 
             });
+            
+            var pull = _getGravitationalPull(
+                    n.getPosition(),
+                    [0, 0],
+                    n.getRadius(),
+                    n.getRadius()
+                    );
 
-            n.accelerate(totalAcceleration[0],totalAcceleration[1]);
+            totalAcceleration[0] += pull[0]*10;
+            totalAcceleration[1] += pull[1]*10;
+
+            n.accelerate(totalAcceleration[0], totalAcceleration[1]);
 
             // Translate the node this frame
-            n.translate((Date.now() - _lastDrawFrame)/1000);
+            var moved = n.translate((Date.now() - _lastDrawFrame)/1000);
 
+            // TODO: Need to also check if a mouse event happened this frame
+            // TODO: Plenty of optimization needed
+            if(moved  && _lastSeenMousePos !== null){
+                
+                // Check if the mouse is over the node
+                if(_mouseOverNode(n, _mouseToGraphCoordinates(_lastSeenMousePos))){
+                    n.setRenderDataByKey('$mouseOver', true);
+                } else {
+                    n.setRenderDataByKey('$mouseOver', false);
+                }
+                
+            }
 
             var graphPos = self.getPosition();
             var scale = self.getScale();
@@ -881,7 +952,10 @@ function Node2D() {
      * 
      * @type type
      */
-    var _renderingData = {};
+    var _renderingData = {
+        "$mouseOver" : false,
+        "$beingDragged": false
+    };
 
 
     /**
@@ -924,13 +998,10 @@ function Node2D() {
 
 
     /**
-     * A list of all nodes that this node is considered in a "group" with.
      * 
-     * TODO: Determine best method of dealing with nodes.
-     * 
-     * @type Array
+     * @type Number
      */
-    var _groupNodes = [];
+    var _groupId = null;
     
     
     /**
@@ -947,6 +1018,11 @@ function Node2D() {
      * @type Array
      */
     var _velocityVector = [0, 0];
+    
+    
+    self.getGroupId = function(){
+        return _groupId;
+    };
     
     
     self.accelerate = function(x, y){
@@ -974,12 +1050,19 @@ function Node2D() {
      * Called by the graph every animation frame.
      * Node moves based on it's current velocity
      * @param {Number} deltaTime the amount of time elapsed in seconds
-     * @returns {undefined}
+     * @returns {bool} whether or not the node actually moved
      */
     self.translate = function(deltaTime){
+        
+        if(_velocityVector[0] === 0 && _velocityVector[1] === 0){
+            return false;
+        }
+        
         _xPosition += _velocityVector[0]*deltaTime;
         _yPosition += _velocityVector[1]*deltaTime;
         _decelerate(deltaTime);
+    
+        return true;
     };
     
 
