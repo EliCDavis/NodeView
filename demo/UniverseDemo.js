@@ -25,6 +25,58 @@
 
 (function(){
     
+    var starSyllables = [
+        "aca",
+        "crux",
+        "far",
+        "ain",
+        "bali",
+        "baran",
+        "alde",
+        "gol",
+        "bore",
+        "kab",
+        "scell",
+        "mos",
+        "pella",
+        "cast",
+        "tor",
+        "gedi",
+        "gem",
+        "had",
+        "dus",
+        "hoe",
+        "bah",
+        "drus",
+        "heka",
+        "jab",
+        "mir",
+        "ram",
+        "zim",
+        "scid",
+        "ran",
+        "nez",
+        "sab",
+        "sar",
+        "sham",
+        "tab",
+        "aus",
+        "ma",
+        "veg",
+        "wez",
+        "yid",
+        "dun"
+    ];
+    
+    function createRandomStarName(){
+        var output = "";
+        for (var i = 0; i < 2 + Math.floor((Math.random() * 2)); i++) {
+            output += starSyllables[Math.floor((Math.random() * starSyllables.length))];
+        }
+        
+        return output.charAt(0).toUpperCase() + output.slice(1);
+    }
+    
     var graph = new Graph2D(document.getElementById("cv"));
     
     var galaxyColors = ["#00CED1","#8A2BE2","#00FA9A","#DC143C","#FA8072","#FFD700", "#FF00FF"];
@@ -41,7 +93,7 @@
         var ctx = g.getContext();
 
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 10*g.getScale();
+        ctx.lineWidth = 40*g.getScale();
         ctx.beginPath();
         ctx.moveTo(startPos[0], startPos[1]);
         ctx.lineTo(endPos[0],endPos[1]);
@@ -69,6 +121,22 @@
                     0,
                     2 * Math.PI);
             ctx.fill();
+            
+            ctx.fillStyle = "#00FF00";
+            ctx.lineWidth = 2;
+            ctx.rect(nodeCanvasPos[0]-200, nodeCanvasPos[1]-150, 150, 90);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(nodeCanvasPos[0], nodeCanvasPos[1]);
+            ctx.lineTo(nodeCanvasPos[0], nodeCanvasPos[1]-95);
+            ctx.lineTo(nodeCanvasPos[0]-50, nodeCanvasPos[1]-95);
+            ctx.stroke();
+            
+            ctx.font = "16px Monospace";
+            ctx.fillText(node.getRenderData()["name"],nodeCanvasPos[0]-190, nodeCanvasPos[1]-130);
+            ctx.fillText("Lightyears Away",nodeCanvasPos[0]-190, nodeCanvasPos[1]-100);
+            ctx.fillText(Math.round(node.getRadius()*1000000)/100000,nodeCanvasPos[0]-190, nodeCanvasPos[1]-80);
         }
         
         if (node.getRenderData()['$beingDragged']) {
@@ -88,7 +156,7 @@
     
     var nodeDetection = function(node, graph, mousePos){
         
-        return (node.distanceFrom(mousePos) <= node.getRadius()*.8);
+        return (node.distanceFrom(mousePos) <= node.getRadius()*2);
              
     };
     
@@ -104,15 +172,56 @@
     node3.addChild(node1);
     graph.linkNodes(node1, node2);
     
-    for (var i = 0; i < 200; i++) {
+    for (var i = 0; i < 400; i++) {
         var node = graph.createNode();
-        node.setRenderDataByKey('color', galaxyColors[i%galaxyColors.length]);
-        node.setRadius(Math.random()*80 + 80);
+        //node.setRenderDataByKey('color', galaxyColors[i%galaxyColors.length]);
+        node.setRenderDataByKey('color', "#FFFFFF");
+        node.setRadius(Math.random()*400 + 80);
+        node.setRenderDataByKey('name',createRandomStarName());
     }
+
+    setInterval(function (){
+        
+        graph.clearLinks();
+        
+        //number of clusters, defaults to undefined
+        clusterMaker.k(50);
+
+        //number of iterations (higher number gives more time to converge), defaults to 1000
+        clusterMaker.iterations(500);
+
+        //data from which to identify clusters, defaults to []
+        var nodes = graph.getNodes();
+        var nodePositionData = [];
+        nodes.forEach(function(node){
+            nodePositionData.push(node.getPosition());
+        });
+        
+        clusterMaker.data(nodePositionData);
+
+        var clusters = clusterMaker.clusters();
+        
+        clusters.forEach(function(cluster){
+            
+            var nodesInCluster = [];
+            
+            cluster.points.forEach(function(point){
+                nodesInCluster.push(graph.getNodeClosestToPoint(point));
+            });
+            
+            for(var i = 0; i < nodesInCluster.length; i ++){
+                graph.linkNodes(nodesInCluster[i], 
+                                nodesInCluster[Math.floor((Math.random() * nodesInCluster.length))]);
+            }
+            
+        });
+        
+    }, 120000);
 
 //    setInterval(function () {
 //        graph.createNode();
 //    }, 10);
+    
     
 })();
 

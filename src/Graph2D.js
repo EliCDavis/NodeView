@@ -279,7 +279,14 @@ function Graph2D(canvas){
     
     var _mouseOutCalled = function (event) {
         
+        // Update their render status
+        if (_itemBeingDraggedOnCanvas !== null &&_itemBeingDraggedOnCanvas["itemType"] === "node") {
+            _itemBeingDraggedOnCanvas["item"].setRenderDataByKey("$beingDragged", false);
+            _itemBeingDraggedOnCanvas["item"].setRenderDataByKey("$mouseOver", false);
+        }
+        
         _lastSeenMousePos = null;
+        _itemBeingDraggedOnCanvas = null;
         
         if(_currentMouseState === "dragging"){
             _currentMouseState = "free";
@@ -412,6 +419,46 @@ function Graph2D(canvas){
         _initializeGraph(canvas);
     }
 
+
+    /**
+     * From Wikipedia:
+     * Kruskal's algorithm is a minimum-spanning-tree algorithm which finds an 
+     * edge of the least possible weight that connects any two trees in the forest
+     * 
+     * @param {type} startingNode
+     * @param {function(Node, Node):Number} weightFunction
+     * @returns {NodeLink[]}
+     */
+    self.kruskalsPath = function(startingNode, weightFunction){
+        throw "not yet implemented!";
+    };
+
+
+    self.getNodes = function(){
+        return _nodes;
+    };
+    
+    
+    self.clearLinks = function(){
+      _nodeLinks = [];  
+    };
+
+    self.getNodeClosestToPoint = function(point){
+
+        var closestNode = null;
+        var bestDist = 10000000;
+        
+        _nodes.forEach(function(node){
+            var dist = node.distanceFrom(point);
+            if(dist < bestDist){
+                closestNode = node;
+                bestDist = dist;
+            }
+        });
+        
+        return closestNode;
+        
+    };
 
     /**
      * Returns the center of the canvas in the form of [x, y] 
@@ -717,7 +764,96 @@ function Graph2D(canvas){
     };
     
     
-    var _getGravitationalPull = function(pos1, pos2, mass1, mass2){
+    /**
+     * Allows users to override how attraction between two nodes are calculated.
+     * 
+     * The nodes passed in to this function are not your ordinary nodes.  They
+     * are instead Objects :
+     * {
+     *      "pos": position     <-- [Number, Number]
+     *      "mass": mass        <-- Number
+     *      "node" node         <-- might not be passed, if passed, Node2D
+     * }
+     * 
+     * @param {function(node1:Object, node2:object, data:Object): Number} method
+     * @returns {undefined}
+     */
+    self.setNodeAttractionMethod = function(method){
+        
+        if(typeof method !== "function"){
+            console.error("Failure to set Node Attraction Method! \
+                           Arguement must be typeof function!");
+            return;
+        }
+        
+        if(method.length !== 3){
+            console.error("Failure to set Node Attraction Method! \
+                           Method's arguement length must be 3 so it\
+                           can be passed the two nodes being rendered and any\
+                           data associated with them!!");
+            return;
+        }
+        
+        _nodeAttraction = method;
+    };
+    
+    
+    /**
+     * The nodes passed in to this function are not your ordinary nodes.  They
+     * are instead Objects :
+     * {
+     *      "pos": position
+     *      "mass": mass
+     *      "node" node
+     *  }
+     * 
+     * Why do it like this?
+     * So you don't actually have to have nodes being passed to this function!
+     * you can just pass objects that just have pos and mass attributes (without
+     * node) and the attraction method can still work with just those (depending
+     * whether or not if it's been replaced and if that replacement is valid
+     * 
+     * @param {type} node1
+     * @param {type} node2
+     * @param {type} extraData
+     * @returns {Number}
+     */
+    var _nodeAttraction = function(node1, node2, extraData){
+        
+        var data = extraData;
+        if(data === undefined || data === null){
+            data = {};
+        }
+        
+        var pos1 = node1.pos;
+        var pos2 = node2.pos;
+        var mass1 = node1.mass;
+        var mass2 = node2.mass;
+        
+        var xDist = pos2[0] - pos1[0];
+        var yDist = pos2[1] - pos1[1];
+        var dist = Math.sqrt( (xDist*xDist) + (yDist*yDist) );
+        
+        // Yeah you know what this is.
+        var masses = Math.abs(mass1 * mass2);
+
+        // Yeah this is physics dude.
+        var attraction = (masses / (dist * dist)) * 2.1;
+        
+        // If we're too close then let's reject
+        if(data["$groupPos"] !== true && dist < mass1+mass2){
+            attraction *=-1;
+        }
+        
+        return attraction;
+        
+    };
+    
+    
+    var _getGravitationalPull = function(node1, node2, extraData){
+        
+        var pos1 = node1.pos;
+        var pos2 = node2.pos;
         
         var xDist = pos2[0] - pos1[0];
         var yDist = pos2[1] - pos1[1];
@@ -727,16 +863,7 @@ function Graph2D(canvas){
             return [0,0];
         }
 
-        // Yeah you know what this is.
-        var masses = Math.abs(mass1 * mass2);
-
-        // Yeah this is physics dude.
-        var attraction = (masses / (dist * dist)) * 2.1;
-
-        // If we're too close then let's reject
-        if(dist < mass1+mass2){
-            attraction *=-5;
-        }
+        var attraction = _nodeAttraction(node1, node2, extraData);
 
         // Get the angle so we can apply the fource properly in x and y
         var angle = Math.atan(yDist/xDist);
@@ -829,10 +956,16 @@ function Graph2D(canvas){
             _nodes.forEach(function(oN){
                 
                 var pull = _getGravitationalPull(
-                    n.getPosition(),
-                    oN.getPosition(),
-                    n.getRadius(),
-                    oN.getRadius()
+                    {
+                        "pos": n.getPosition(),
+                        "mass":n.getRadius(), 
+                        "node": n
+                    },
+                    {
+                        "pos": oN.getPosition(),
+                        "mass":oN.getRadius(),
+                        "node": oN
+                    }
                 );
                 
                 // Add to the acceleration.
@@ -842,14 +975,22 @@ function Graph2D(canvas){
             });
             
             var pull = _getGravitationalPull(
-                    n.getPosition(),
-                    [0, 0],
-                    n.getRadius(),
-                    n.getRadius()
-                    );
+                    {
+                        "pos": n.getPosition(),
+                        "mass":n.getRadius(), 
+                        "node": n
+                    },
+                    {
+                        "pos": [0, 0],
+                        "mass":n.getRadius()*2,
+                        "group": true
+                    },
+                    {
+                        "$groupPos": true
+                    });
 
-            totalAcceleration[0] += pull[0]*10;
-            totalAcceleration[1] += pull[1]*10;
+            totalAcceleration[0] += pull[0]*5;
+            totalAcceleration[1] += pull[1]*5;
 
             n.accelerate(totalAcceleration[0], totalAcceleration[1]);
 

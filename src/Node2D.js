@@ -132,7 +132,7 @@ function Node2D() {
     
     self.accelerate = function(x, y){
         
-        var maxSpeed = 300;
+        var maxSpeed = 30000;
         
         _velocityVector[0] = Math.max(Math.min(maxSpeed, _velocityVector[0]+x), -maxSpeed);
         _velocityVector[1] = Math.max(Math.min(maxSpeed, _velocityVector[1]+y), -maxSpeed);

@@ -32,6 +32,12 @@ gulp.task('build-all', function () {
     gulp.src(['./src/*2D.js', './src/Util.js'])
             .pipe(concat('nodeview.2D.js'))
             .pipe(gulp.dest('./dist/'));
+    
+//    return browserify('./demo/app/main')
+//            .bundle()
+//            .pipe(source('app.js'))
+//            .pipe(streamify(uglify()))
+//            .pipe(gulp.dest('./demo'))
 
 });
 
