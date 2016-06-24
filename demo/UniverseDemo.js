@@ -150,8 +150,6 @@
             ctx.fill();
         } 
         
-        
-        
     };
     
     var nodeDetection = function(node, graph, mousePos){
@@ -180,43 +178,43 @@
         node.setRenderDataByKey('name',createRandomStarName());
     }
 
-    setInterval(function (){
-        
-        graph.clearLinks();
-        
-        //number of clusters, defaults to undefined
-        clusterMaker.k(50);
-
-        //number of iterations (higher number gives more time to converge), defaults to 1000
-        clusterMaker.iterations(500);
-
-        //data from which to identify clusters, defaults to []
-        var nodes = graph.getNodes();
-        var nodePositionData = [];
-        nodes.forEach(function(node){
-            nodePositionData.push(node.getPosition());
-        });
-        
-        clusterMaker.data(nodePositionData);
-
-        var clusters = clusterMaker.clusters();
-        
-        clusters.forEach(function(cluster){
-            
-            var nodesInCluster = [];
-            
-            cluster.points.forEach(function(point){
-                nodesInCluster.push(graph.getNodeClosestToPoint(point));
-            });
-            
-            for(var i = 0; i < nodesInCluster.length; i ++){
-                graph.linkNodes(nodesInCluster[i], 
-                                nodesInCluster[Math.floor((Math.random() * nodesInCluster.length))]);
-            }
-            
-        });
-        
-    }, 120000);
+//    setInterval(function (){
+//        
+//        graph.clearLinks();
+//        
+//        //number of clusters, defaults to undefined
+//        clusterMaker.k(50);
+//
+//        //number of iterations (higher number gives more time to converge), defaults to 1000
+//        clusterMaker.iterations(500);
+//
+//        //data from which to identify clusters, defaults to []
+//        var nodes = graph.getNodes();
+//        var nodePositionData = [];
+//        nodes.forEach(function(node){
+//            nodePositionData.push(node.getPosition());
+//        });
+//        
+//        clusterMaker.data(nodePositionData);
+//
+//        var clusters = clusterMaker.clusters();
+//        
+//        clusters.forEach(function(cluster){
+//            
+//            var nodesInCluster = [];
+//            
+//            cluster.points.forEach(function(point){
+//                nodesInCluster.push(graph.getNodeClosestToPoint(point));
+//            });
+//            
+//            for(var i = 0; i < nodesInCluster.length; i ++){
+//                graph.linkNodes(nodesInCluster[i], 
+//                                nodesInCluster[Math.floor((Math.random() * nodesInCluster.length))]);
+//            }
+//            
+//        });
+//        
+//    }, 120000);
 
 //    setInterval(function () {
 //        graph.createNode();
