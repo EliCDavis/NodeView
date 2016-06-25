@@ -58,7 +58,7 @@ function Node2D() {
      * @type type
      */
     var _renderingData = {
-        "$mouseOver" : false,
+        "$mouseOver": false,
         "$beingDragged": false
     };
 
@@ -85,8 +85,8 @@ function Node2D() {
      * @type Array
      */
     var _children = [];
-    
-    
+
+
     /**
      * The current parent of the node.
      * @type Node2D
@@ -107,8 +107,8 @@ function Node2D() {
      * @type Number
      */
     var _groupId = null;
-    
-    
+
+
     /**
      * The radius of the node, the amount of free space around the node
      * that would be kept free from other nodes
@@ -123,53 +123,73 @@ function Node2D() {
      * @type Array
      */
     var _velocityVector = [0, 0];
+
+
+    /**
+     * @stof 105034
+     * @returns {String}
+     */
+    function generateUUID() {
+        var d = new Date().getTime();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = (d + Math.random() * 16) % 16 | 0;
+            d = Math.floor(d / 16);
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+        return uuid;
+    }
     
+    var _id = generateUUID();
     
-    self.getGroupId = function(){
+    self.getId = function(){
+        return _id;
+    };
+
+    self.getGroupId = function () {
         return _groupId;
     };
-    
-    
-    self.accelerate = function(x, y){
-        
+
+
+    self.accelerate = function (x, y) {
+
         var maxSpeed = 30000;
-        
-        _velocityVector[0] = Math.max(Math.min(maxSpeed, _velocityVector[0]+x), -maxSpeed);
-        _velocityVector[1] = Math.max(Math.min(maxSpeed, _velocityVector[1]+y), -maxSpeed);
-        
+
+        _velocityVector[0] = Math.max(Math.min(maxSpeed, _velocityVector[0] + x), -maxSpeed);
+        _velocityVector[1] = Math.max(Math.min(maxSpeed, _velocityVector[1] + y), -maxSpeed);
+
     };
-    
-    
-    var _decelerate = function(deltaTime){
-        
+
+
+    var _decelerate = function (deltaTime) {
+
         var xdir = _velocityVector[0] > 0 ? -1 : 1;
         var ydir = _velocityVector[1] > 0 ? -1 : 1;
-        
+
         //console.log(Math.sqrt(_velocityVector[0])*deltaTime*xdir);
-        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0]))*deltaTime*xdir*2;
-        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1]))*deltaTime*ydir*2;
+        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0])) * deltaTime * xdir * 2;
+        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1])) * deltaTime * ydir * 2;
     };
-    
-    
+
+
     /**
      * Called by the graph every animation frame.
      * Node moves based on it's current velocity
      * @param {Number} deltaTime the amount of time elapsed in seconds
      * @returns {bool} whether or not the node actually moved
      */
-    self.translate = function(deltaTime){
-        
-        if(_velocityVector[0] === 0 && _velocityVector[1] === 0){
+    self.translate = function (deltaTime) {
+
+        if (_velocityVector[0] === 0 && _velocityVector[1] === 0) {
             return false;
         }
-        
-        _xPosition += _velocityVector[0]*deltaTime;
-        _yPosition += _velocityVector[1]*deltaTime;
+
+        _xPosition += _velocityVector[0] * deltaTime;
+        _yPosition += _velocityVector[1] * deltaTime;
         _decelerate(deltaTime);
-    
+
         return true;
     };
-    
+
 
     /**
      * Utility function for quickly determining distance
@@ -179,44 +199,44 @@ function Node2D() {
      * @param {type} y
      * @returns {Number}
      */
-    self.distanceFrom = function(x,y){
-        
+    self.distanceFrom = function (x, y) {
+
         // Allow passing of 2 element array instead of 2 arguements for position
-        if(x.constructor === Array){
+        if (x.constructor === Array) {
             y = x[1];
             x = x[0];
         }
         //console.log("running");
-        return Math.sqrt(Math.pow(x-_xPosition, 2) + Math.pow(y-_yPosition, 2));
-        
+        return Math.sqrt(Math.pow(x - _xPosition, 2) + Math.pow(y - _yPosition, 2));
+
     };
-    
-    
+
+
     /**
      * Set's the radius of the node
      * 
      * @param {type} r radius the node will take on
      * @returns {undefined}
      */
-    self.setRadius = function(r){
+    self.setRadius = function (r) {
         _radius = r;
     };
-    
-    
+
+
     /**
      * Get the radius the node is currentely operating by
      * 
      * @returns {r|Number}
      */
-    self.getRadius = function(){
+    self.getRadius = function () {
         return _radius;
     };
-    
+
 
     /**
      * Method called when the node was clicked on the canvas
      */
-    self.onclick = function(){
+    self.onclick = function () {
         console.log("Clicked");
     };
 
@@ -325,7 +345,7 @@ function Node2D() {
     };
 
 
-    self.getClickDetectionFunction = function(){
+    self.getClickDetectionFunction = function () {
         return _clickDetectionfunction;
     };
 
@@ -357,8 +377,8 @@ function Node2D() {
     self.getPosition = function () {
         return [_xPosition, _yPosition];
     };
-    
-    
+
+
     /**
      * Set the current position of the node in the graph
      * 
@@ -366,14 +386,14 @@ function Node2D() {
      * @param {Number} y The y position from the top left corner of the graph
      * @returns {undefined}
      */
-    self.setPosition = function(x, y){
-        
-        if(x.constructor === Array){
+    self.setPosition = function (x, y) {
+
+        if (x.constructor === Array) {
             _xPosition = x[0];
             _yPosition = x[1];
             return;
         }
-        
+
         _xPosition = x;
         _yPosition = y;
     };
@@ -390,78 +410,95 @@ function Node2D() {
     };
 
 
-    self.addLink = function(linkNode){
-        
-        if(linkNode === null || linkNode === undefined){
-            throw "Failure to link node!  Link node was: "+linkNode;
+    self.addLink = function (linkNode) {
+
+        if (linkNode === null || linkNode === undefined) {
+            throw "Failure to link node!  Link node was: " + linkNode;
             return;
         }
-        
+
         _links.push(linkNode);
-        
+
     };
-    
-    self.getLinks = function(){
+
+    self.getLinks = function () {
         return _links;
     };
     
-    self.setParent = function(newParent){
+    self.isLinkedWith = function(nodeLinkedWith){
         
+        for(var i  = 0; i < _links.length; i ++){
+            if(_links[i].getId() === nodeLinkedWith.getId()){
+                return true;
+            }
+        }
+        
+        return false;
+    };
+    
+    
+    self.clearLinks = function(){
+        _links = [];
+    };
+
+
+    self.setParent = function (newParent) {
+
         // TODO: Make sure we're not setting one of our children or children childrens as our parent.
-        
+
         // Make sure our parent knows we're leaving them for another..
-        if(_parent !== null && _parent !== undefined){
+        if (_parent !== null && _parent !== undefined) {
             _parent.removeChild(self);
         }
-        
+
         _parent = newParent;
-        
-        if(_parent.getChildren().indexOf(self) === -1){
+
+        if (_parent.getChildren().indexOf(self) === -1) {
             _parent.addChild(self);
         }
-        
+
     };
-    
-    
-    self.getParent = function(){
+
+
+    self.getParent = function () {
         return _parent;
     };
-    
-    
-    self.addChild = function(child){
-        
+
+
+    self.addChild = function (child) {
+
         // TODO: Make sure this child does not exist ANYWHERE on the family tree
-        
+
         // Make sure we don't already have the child
-        if(_children.indexOf(child) !== -1){
-            console.log("We already have that node as a child; ",child);
+        if (_children.indexOf(child) !== -1) {
+            console.log("We already have that node as a child; ", child);
             return;
         }
-        
+
         _children.push(child);
-        
-        if(child.getParent() !== self){
+
+        if (child.getParent() !== self) {
             child.setParent(self);
         }
-        
+
     };
-    
-    
-    self.getChildren = function(){
+
+
+    self.getChildren = function () {
         return _children;
     };
-    
-    
-    self.removeChild = function(child){
-        
+
+
+    self.removeChild = function (child) {
+
         var index = _children.indexOf(child);
-        
-        if(index === -1){
+
+        if (index === -1) {
             throw "Failure to remove child! Trying to remove a child we don't have!";
         }
-        
+
         _children.splice(index, 1);
-        
+
     };
-    
+
 }

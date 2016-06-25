@@ -265,15 +265,14 @@
 
     });
 
-    var backgroundRender = function (graph) {
 
+    var backgroundRender = function (graph) {
         var ctx = graph.getContext();
         ctx.fillStyle = "#660000";
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
     };
-    
     graph.setBackgroundRenderMethod(backgroundRender);
+
 
     var nodeRender = function (node, nodeCanvasPos, graph) {
 
@@ -292,17 +291,20 @@
                 2 * Math.PI);
         ctx.fill();
 
-        if (node.getRenderData()['$mouseOver']) {
+        if (node.getRenderData().$mouseOver || node.getRenderData().$neighborMouseOver) {
 
-            // Draw a black circle in the middle..
-            ctx.fillStyle = "black";
-            ctx.beginPath();
-            ctx.arc(nodeCanvasPos[0],
-                    nodeCanvasPos[1],
-                    node.getRadius() * graph.getScale() * .6 * .5,
-                    0,
-                    2 * Math.PI);
-            ctx.fill();
+
+            if (!node.getRenderData().$neighborMouseOver) {
+                // Draw a black circle in the middle..
+                ctx.fillStyle = "black";
+                ctx.beginPath();
+                ctx.arc(nodeCanvasPos[0],
+                        nodeCanvasPos[1],
+                        node.getRadius() * graph.getScale() * .6 * .5,
+                        0,
+                        2 * Math.PI);
+                ctx.fill();
+            }
 
             // Make sure the mouse over box is always on top of everything.
             graph.postRender(function () {
@@ -328,7 +330,7 @@
                 // display the text
                 ctx.fillStyle = "black";
                 ctx.fillText(node.getRenderData()["name"], nodeCanvasPos[0] - 50 - textDimensions.width, nodeCanvasPos[1] - 95);
-            
+
             });
         }
 
@@ -346,20 +348,58 @@
     };
 
     var nodeDetection = function (node, graph, mousePos) {
-
-        return (node.distanceFrom(mousePos) <= node.getRadius()*.6);
-
+        return (node.distanceFrom(mousePos) <= node.getRadius() * .6);
     };
 
     graph.setDefaultNodeRenderAndMouseDetection(nodeRender, nodeDetection);
 
-    console.log(renderResults);
+    var nodes = {};
 
     renderResults.forEach(function (course) {
-        graph.createNode({
-            renderData: course,
-            radius: course.radius
+        nodes[course.id] = {
+            "course": course,
+            "node": graph.createNode({
+                renderData: course,
+                radius: course.radius
+            })};
+    });
+
+    Object.keys(nodes).forEach(function (nodeKey) {
+
+        if (!nodes[nodeKey].course.prereq) {
+            return;
+        }
+
+        nodes[nodeKey].course.prereq.forEach(function (prereq) {
+
+            // Some prereqs require us to be a seniour
+            if (prereq === "Senior standing") {
+                return;
+            }
+
+            // An array means we only have to complete one of the courses.
+            if (prereq.constructor === Array) {
+                for (var i = 0; i < prereq.length; i++) {
+                    Object.keys(prereq[i]).forEach(function (key) {
+
+                        graph.linkNodes(nodes[nodeKey].node, nodes[key].node);
+
+                    });
+                }
+            }
+
+            if (prereq.constructor === Object) {
+                Object.keys(prereq).forEach(function (key) {
+
+                    graph.linkNodes(nodes[nodeKey].node, nodes[key].node);
+
+                });
+
+            }
+
         });
+
+
     });
 
 })();

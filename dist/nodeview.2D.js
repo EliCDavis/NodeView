@@ -82,32 +82,32 @@ function Graph2D(canvas) {
      * @type Object
      */
     var _options = {
-        centerOnNodes : {
+        centerOnNodes: {
             "value": true,
             "constructor": Boolean
         }
     };
 
-    
-    
-    self.setOption = function(optionName, value){
-        
-        if(typeof optionName !== "string"){
+
+
+    self.setOption = function (optionName, value) {
+
+        if (typeof optionName !== "string") {
             throw "Unable to set option:  Option name expected to be type\
-                    string, received: ",optionName;
+                    string, received: ", optionName;
         }
-        
+
         try {
-            if(_options[optionName].constructor === value.constructor){
+            if (_options[optionName].constructor === value.constructor) {
                 _options[optionName].value = value;
             } else {
                 throw "Unable to set option: Variable constructor expected: "
-                , _options[optionName].constructor,". Received: ",value.constructor;
+                        , _options[optionName].constructor, ". Received: ", value.constructor;
             }
-        } catch (e){
-            throw "Unable to set option: ",e;
+        } catch (e) {
+            throw "Unable to set option: ", e;
         }
-        
+
     };
 
 
@@ -128,7 +128,21 @@ function Graph2D(canvas) {
     var _backgroundRenderMethod = null;
 
 
-    var _linkRenderMethod = null;
+    var _linkRenderMethod = function (g, startPos, endPos, link) {
+        var ctx = g.getContext();
+
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 10 * g.getScale();
+        ctx.beginPath();
+        ctx.moveTo(startPos[0], startPos[1]);
+        ctx.lineTo(endPos[0], endPos[1]);
+        ctx.stroke();
+    };
+
+
+    self.nodesAreLinked = function (n1, n2) {
+        return n1.isLinkedWith(n2);
+    };
 
 
     self.setLinkRenderMethod = function (renderMethod) {
@@ -243,6 +257,55 @@ function Graph2D(canvas) {
     var _lastSeenMousePos = null;
 
 
+    var _setNodeAsBeingDragged = function(node){
+        
+        node.setRenderDataByKey("$beingDragged", true);
+        
+        var links = node.getLinks();
+        
+        for(var i = 0; i < links.length; i ++){
+            links[i].setRenderDataByKey("$neighborBeingDragged", true);
+        }
+        
+    };
+    
+    
+    var _setNodeAsNotBeingDragged = function(node){
+        
+        node.setRenderDataByKey("$beingDragged", false);
+        
+        var links = node.getLinks();
+        
+        for(var i = 0; i < links.length; i ++){
+            links[i].setRenderDataByKey("$neighborBeingDragged", false);
+        }
+        
+    };
+    
+    var _setNodeAsHovered = function(node){
+        
+        node.setRenderDataByKey("$mouseOver", true);
+        
+        var links = node.getLinks();
+        
+        for(var i = 0; i < links.length; i ++){
+            links[i].setRenderDataByKey("$neighborMouseOver", true);
+        }
+        
+    };
+    
+    var _setNodeAsNotHovered = function(node){
+        
+        node.setRenderDataByKey("$mouseOver", false);
+        
+        var links = node.getLinks();
+        
+        for(var i = 0; i < links.length; i ++){
+            links[i].setRenderDataByKey("$neighborMouseOver", false);
+        }
+        
+    };
+
     var _mouseUpCalled = function (event) {
 
         _lastSeenMousePos = event;
@@ -251,7 +314,7 @@ function Graph2D(canvas) {
 
             // Update their render status
             if (_itemBeingDraggedOnCanvas["itemType"] === "node") {
-                _itemBeingDraggedOnCanvas["item"].setRenderDataByKey("$beingDragged", false);
+                _setNodeAsNotBeingDragged(_itemBeingDraggedOnCanvas["item"]);
             }
 
             _itemBeingDraggedOnCanvas = null;
@@ -319,8 +382,8 @@ function Graph2D(canvas) {
 
         // Update their render status
         if (_itemBeingDraggedOnCanvas !== null && _itemBeingDraggedOnCanvas["itemType"] === "node") {
-            _itemBeingDraggedOnCanvas["item"].setRenderDataByKey("$beingDragged", false);
-            _itemBeingDraggedOnCanvas["item"].setRenderDataByKey("$mouseOver", false);
+            _setNodeAsNotBeingDragged(_itemBeingDraggedOnCanvas["item"]);
+            _setNodeAsNotHovered(_itemBeingDraggedOnCanvas["item"]);
         }
 
         _lastSeenMousePos = null;
@@ -343,7 +406,8 @@ function Graph2D(canvas) {
 
             // Update their render status
             if (_itemBeingDraggedOnCanvas["itemType"] === "node") {
-                _itemBeingDraggedOnCanvas["item"].setRenderDataByKey("$beingDragged", true);
+                _setNodeAsBeingDragged(_itemBeingDraggedOnCanvas["item"]);
+                //_itemBeingDraggedOnCanvas["item"].setRenderDataByKey("$beingDragged", true);
             }
 
         }
@@ -478,6 +542,11 @@ function Graph2D(canvas) {
 
 
     self.clearLinks = function () {
+        
+        _nodeLinks.forEach(function(node){
+            node.clearLinks();
+        });
+        
         _nodeLinks = [];
     };
 
@@ -559,8 +628,8 @@ function Graph2D(canvas) {
     };
 
 
-    var _nodesCenter = function(nodesToAverage){
-        
+    var _nodesCenter = function (nodesToAverage) {
+
         // Average and find center of all nodes
         var averageCenter = [0, 0];
 
@@ -575,10 +644,10 @@ function Graph2D(canvas) {
         // Average the total to get center
         averageCenter[0] = total[0] / nodesToAverage.length;
         averageCenter[1] = total[1] / nodesToAverage.length;
-        
+
         return averageCenter;
     };
-    
+
 
     /**
      * Returns x and y coordinates that are atleast as far away as the radius
@@ -912,7 +981,7 @@ function Graph2D(canvas) {
             attraction *= -3.5;
         }
 
-        if(data["$groupPos"]){
+        if (data["$groupPos"]) {
             attraction = .05;
         }
 
@@ -969,27 +1038,34 @@ function Graph2D(canvas) {
      * @param {function} cb
      * @returns {undefined}
      */
-    self.postRender = function(cb){
-        
-        if(typeof cb !== "function"){
+    self.postRender = function (cb) {
+
+        if (typeof cb !== "function") {
             throw "Post render only accepts functions!";
         }
-        
+
         _postRenderQueue.push(cb);
-        
+
     };
 
-    
-    var _centerOnNodes = function(){
-        
-        if(!_nodes || _nodes.length === 0){
+
+    // TODO: Broken AF.
+    var _centerOnNodes = function () {
+
+        if (!_nodes || _nodes.length === 0) {
             return;
         }
-        
+
         var average = _nodesCenter(_nodes);
-        var canvasSize =  _getCanvasSize();
-        
-        self.setPosition(average[0] + ((canvasSize[0]/2)*(1/_scale)) ,average[1] + ((canvasSize[1]/2)*(1/_scale)) );
+        var canvasSize = _getCanvasSize();
+
+        var desiredPos = [average[0] + (canvasSize[0]/_scale/2),
+                          average[1] + (canvasSize[1]/_scale/2)];
+
+        var difference = [desiredPos[0] - _xPosition, desiredPos[1] - _yPosition];
+
+        _xPosition += difference[0] * 0.1; 
+        _yPosition += difference[1] * 0.1;
     };
 
 
@@ -1067,6 +1143,8 @@ function Graph2D(canvas) {
             var totalAcceleration = [0, 0];
             _nodes.forEach(function (oN) {
 
+                var gavitationData = {};
+
                 var pull = _getGravitationalPull(
                         {
                             "pos": n.getPosition(),
@@ -1077,8 +1155,9 @@ function Graph2D(canvas) {
                             "pos": oN.getPosition(),
                             "mass": oN.getRadius(),
                             "node": oN
-                        }
-                );
+                        },
+                        gavitationData
+                        );
 
                 // Add to the acceleration.
                 totalAcceleration[0] += pull[0];
@@ -1115,9 +1194,9 @@ function Graph2D(canvas) {
 
                 // Check if the mouse is over the node
                 if (_mouseOverNode(n, _mouseToGraphCoordinates(_lastSeenMousePos))) {
-                    n.setRenderDataByKey('$mouseOver', true);
+                    _setNodeAsHovered(n);
                 } else {
-                    n.setRenderDataByKey('$mouseOver', false);
+                    _setNodeAsNotHovered(n);
                 }
 
             }
@@ -1135,14 +1214,14 @@ function Graph2D(canvas) {
             }
 
         });
-        
+
         // render anything in the queue.
-        _postRenderQueue.forEach(function(cb){
+        _postRenderQueue.forEach(function (cb) {
             cb();
         });
         _postRenderQueue = [];
 
-        if(_options.centerOnNodes.value){
+        if (_options.centerOnNodes.value) {
             _centerOnNodes();
         }
 
@@ -1216,7 +1295,7 @@ function Node2D() {
      * @type type
      */
     var _renderingData = {
-        "$mouseOver" : false,
+        "$mouseOver": false,
         "$beingDragged": false
     };
 
@@ -1243,8 +1322,8 @@ function Node2D() {
      * @type Array
      */
     var _children = [];
-    
-    
+
+
     /**
      * The current parent of the node.
      * @type Node2D
@@ -1265,8 +1344,8 @@ function Node2D() {
      * @type Number
      */
     var _groupId = null;
-    
-    
+
+
     /**
      * The radius of the node, the amount of free space around the node
      * that would be kept free from other nodes
@@ -1281,53 +1360,73 @@ function Node2D() {
      * @type Array
      */
     var _velocityVector = [0, 0];
+
+
+    /**
+     * @stof 105034
+     * @returns {String}
+     */
+    function generateUUID() {
+        var d = new Date().getTime();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = (d + Math.random() * 16) % 16 | 0;
+            d = Math.floor(d / 16);
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+        return uuid;
+    }
     
+    var _id = generateUUID();
     
-    self.getGroupId = function(){
+    self.getId = function(){
+        return _id;
+    };
+
+    self.getGroupId = function () {
         return _groupId;
     };
-    
-    
-    self.accelerate = function(x, y){
-        
+
+
+    self.accelerate = function (x, y) {
+
         var maxSpeed = 30000;
-        
-        _velocityVector[0] = Math.max(Math.min(maxSpeed, _velocityVector[0]+x), -maxSpeed);
-        _velocityVector[1] = Math.max(Math.min(maxSpeed, _velocityVector[1]+y), -maxSpeed);
-        
+
+        _velocityVector[0] = Math.max(Math.min(maxSpeed, _velocityVector[0] + x), -maxSpeed);
+        _velocityVector[1] = Math.max(Math.min(maxSpeed, _velocityVector[1] + y), -maxSpeed);
+
     };
-    
-    
-    var _decelerate = function(deltaTime){
-        
+
+
+    var _decelerate = function (deltaTime) {
+
         var xdir = _velocityVector[0] > 0 ? -1 : 1;
         var ydir = _velocityVector[1] > 0 ? -1 : 1;
-        
+
         //console.log(Math.sqrt(_velocityVector[0])*deltaTime*xdir);
-        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0]))*deltaTime*xdir*2;
-        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1]))*deltaTime*ydir*2;
+        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0])) * deltaTime * xdir * 2;
+        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1])) * deltaTime * ydir * 2;
     };
-    
-    
+
+
     /**
      * Called by the graph every animation frame.
      * Node moves based on it's current velocity
      * @param {Number} deltaTime the amount of time elapsed in seconds
      * @returns {bool} whether or not the node actually moved
      */
-    self.translate = function(deltaTime){
-        
-        if(_velocityVector[0] === 0 && _velocityVector[1] === 0){
+    self.translate = function (deltaTime) {
+
+        if (_velocityVector[0] === 0 && _velocityVector[1] === 0) {
             return false;
         }
-        
-        _xPosition += _velocityVector[0]*deltaTime;
-        _yPosition += _velocityVector[1]*deltaTime;
+
+        _xPosition += _velocityVector[0] * deltaTime;
+        _yPosition += _velocityVector[1] * deltaTime;
         _decelerate(deltaTime);
-    
+
         return true;
     };
-    
+
 
     /**
      * Utility function for quickly determining distance
@@ -1337,44 +1436,44 @@ function Node2D() {
      * @param {type} y
      * @returns {Number}
      */
-    self.distanceFrom = function(x,y){
-        
+    self.distanceFrom = function (x, y) {
+
         // Allow passing of 2 element array instead of 2 arguements for position
-        if(x.constructor === Array){
+        if (x.constructor === Array) {
             y = x[1];
             x = x[0];
         }
         //console.log("running");
-        return Math.sqrt(Math.pow(x-_xPosition, 2) + Math.pow(y-_yPosition, 2));
-        
+        return Math.sqrt(Math.pow(x - _xPosition, 2) + Math.pow(y - _yPosition, 2));
+
     };
-    
-    
+
+
     /**
      * Set's the radius of the node
      * 
      * @param {type} r radius the node will take on
      * @returns {undefined}
      */
-    self.setRadius = function(r){
+    self.setRadius = function (r) {
         _radius = r;
     };
-    
-    
+
+
     /**
      * Get the radius the node is currentely operating by
      * 
      * @returns {r|Number}
      */
-    self.getRadius = function(){
+    self.getRadius = function () {
         return _radius;
     };
-    
+
 
     /**
      * Method called when the node was clicked on the canvas
      */
-    self.onclick = function(){
+    self.onclick = function () {
         console.log("Clicked");
     };
 
@@ -1483,7 +1582,7 @@ function Node2D() {
     };
 
 
-    self.getClickDetectionFunction = function(){
+    self.getClickDetectionFunction = function () {
         return _clickDetectionfunction;
     };
 
@@ -1515,8 +1614,8 @@ function Node2D() {
     self.getPosition = function () {
         return [_xPosition, _yPosition];
     };
-    
-    
+
+
     /**
      * Set the current position of the node in the graph
      * 
@@ -1524,14 +1623,14 @@ function Node2D() {
      * @param {Number} y The y position from the top left corner of the graph
      * @returns {undefined}
      */
-    self.setPosition = function(x, y){
-        
-        if(x.constructor === Array){
+    self.setPosition = function (x, y) {
+
+        if (x.constructor === Array) {
             _xPosition = x[0];
             _yPosition = x[1];
             return;
         }
-        
+
         _xPosition = x;
         _yPosition = y;
     };
@@ -1548,80 +1647,97 @@ function Node2D() {
     };
 
 
-    self.addLink = function(linkNode){
-        
-        if(linkNode === null || linkNode === undefined){
-            throw "Failure to link node!  Link node was: "+linkNode;
+    self.addLink = function (linkNode) {
+
+        if (linkNode === null || linkNode === undefined) {
+            throw "Failure to link node!  Link node was: " + linkNode;
             return;
         }
-        
+
         _links.push(linkNode);
-        
+
     };
-    
-    self.getLinks = function(){
+
+    self.getLinks = function () {
         return _links;
     };
     
-    self.setParent = function(newParent){
+    self.isLinkedWith = function(nodeLinkedWith){
         
+        for(var i  = 0; i < _links.length; i ++){
+            if(_links[i].getId() === nodeLinkedWith.getId()){
+                return true;
+            }
+        }
+        
+        return false;
+    };
+    
+    
+    self.clearLinks = function(){
+        _links = [];
+    };
+
+
+    self.setParent = function (newParent) {
+
         // TODO: Make sure we're not setting one of our children or children childrens as our parent.
-        
+
         // Make sure our parent knows we're leaving them for another..
-        if(_parent !== null && _parent !== undefined){
+        if (_parent !== null && _parent !== undefined) {
             _parent.removeChild(self);
         }
-        
+
         _parent = newParent;
-        
-        if(_parent.getChildren().indexOf(self) === -1){
+
+        if (_parent.getChildren().indexOf(self) === -1) {
             _parent.addChild(self);
         }
-        
+
     };
-    
-    
-    self.getParent = function(){
+
+
+    self.getParent = function () {
         return _parent;
     };
-    
-    
-    self.addChild = function(child){
-        
+
+
+    self.addChild = function (child) {
+
         // TODO: Make sure this child does not exist ANYWHERE on the family tree
-        
+
         // Make sure we don't already have the child
-        if(_children.indexOf(child) !== -1){
-            console.log("We already have that node as a child; ",child);
+        if (_children.indexOf(child) !== -1) {
+            console.log("We already have that node as a child; ", child);
             return;
         }
-        
+
         _children.push(child);
-        
-        if(child.getParent() !== self){
+
+        if (child.getParent() !== self) {
             child.setParent(self);
         }
-        
+
     };
-    
-    
-    self.getChildren = function(){
+
+
+    self.getChildren = function () {
         return _children;
     };
-    
-    
-    self.removeChild = function(child){
-        
+
+
+    self.removeChild = function (child) {
+
         var index = _children.indexOf(child);
-        
-        if(index === -1){
+
+        if (index === -1) {
             throw "Failure to remove child! Trying to remove a child we don't have!";
         }
-        
+
         _children.splice(index, 1);
-        
+
     };
-    
+
 }
 /* 
  * The MIT License
@@ -1649,8 +1765,6 @@ function Node2D() {
 
 
 (function () {
-
-    
 
     // IE7 and 8 support for indexOf
     Array.prototype.indexOf || (Array.prototype.indexOf = function (d, e) {
