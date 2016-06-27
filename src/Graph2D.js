@@ -132,7 +132,7 @@ function Graph2D(canvas) {
         var ctx = g.getContext();
 
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 10 * g.getScale();
+        ctx.lineWidth = 5 * g.getScale();
         ctx.beginPath();
         ctx.moveTo(startPos[0], startPos[1]);
         ctx.lineTo(endPos[0], endPos[1]);
@@ -257,53 +257,58 @@ function Graph2D(canvas) {
     var _lastSeenMousePos = null;
 
 
-    var _setNodeAsBeingDragged = function(node){
-        
+    var _setNodeAsBeingDragged = function (node) {
+
         node.setRenderDataByKey("$beingDragged", true);
-        
+        node.setVelocity(0,0);
+
         var links = node.getLinks();
-        
-        for(var i = 0; i < links.length; i ++){
-            links[i].setRenderDataByKey("$neighborBeingDragged", true);
+
+        for (var i = 0; i < links.length; i++) {
+            links[i].node.setRenderDataByKey("$neighborBeingDragged", true);
         }
-        
+
     };
-    
-    
-    var _setNodeAsNotBeingDragged = function(node){
-        
+
+
+    var _setNodeAsNotBeingDragged = function (node) {
+
         node.setRenderDataByKey("$beingDragged", false);
-        
+
         var links = node.getLinks();
-        
-        for(var i = 0; i < links.length; i ++){
-            links[i].setRenderDataByKey("$neighborBeingDragged", false);
+
+        for (var i = 0; i < links.length; i++) {
+            links[i].node.setRenderDataByKey("$neighborBeingDragged", false);
         }
-        
+
     };
-    
-    var _setNodeAsHovered = function(node){
-        
+
+    var _setNodeAsHovered = function (node) {
+
+        if (node.getRenderData().$mouseOver) {
+            return;
+        }
+
         node.setRenderDataByKey("$mouseOver", true);
-        
+
         var links = node.getLinks();
-        
-        for(var i = 0; i < links.length; i ++){
-            links[i].setRenderDataByKey("$neighborMouseOver", true);
+
+        for (var i = 0; i < links.length; i++) {
+            links[i].node.setRenderDataByKey("$neighborMouseOver", true);
         }
-        
+
     };
-    
-    var _setNodeAsNotHovered = function(node){
-        
+
+    var _setNodeAsNotHovered = function (node) {
+
         node.setRenderDataByKey("$mouseOver", false);
-        
+
         var links = node.getLinks();
-        
-        for(var i = 0; i < links.length; i ++){
-            links[i].setRenderDataByKey("$neighborMouseOver", false);
+
+        for (var i = 0; i < links.length; i++) {
+            links[i].node.setRenderDataByKey("$neighborMouseOver", false);
         }
-        
+
     };
 
     var _mouseUpCalled = function (event) {
@@ -542,11 +547,11 @@ function Graph2D(canvas) {
 
 
     self.clearLinks = function () {
-        
-        _nodeLinks.forEach(function(node){
+
+        _nodeLinks.forEach(function (node) {
             node.clearLinks();
         });
-        
+
         _nodeLinks = [];
     };
 
@@ -884,12 +889,15 @@ function Graph2D(canvas) {
             throw "Failure to link! The second node passed in to link was: " + n2;
         }
 
-        // TODO: Make sure the link does not already exist
+        // Make sure the link does not already exist
+        if(n1.isLinkedWith(n2)){
+            throw "Nodes are already linked!";
+        }
 
         // Tell the nodes their linked
         // TODO: Review and make sure doing this even makes sense
-        n1.addLink(n2);
-        n2.addLink(n1);
+        n1.addLink(n2, linkData);
+        n2.addLink(n1, linkData);
 
         // Create our link for the graph to keep up with.
         _nodeLinks.push({
@@ -977,7 +985,7 @@ function Graph2D(canvas) {
         var attraction = (masses / (dist * dist)) * 1.1;
 
         // If we're too close then let's reject
-        if (/*data["$groupPos"] !== true && */dist < mass1 + mass2) {
+        if (dist < mass1 + mass2) {
             attraction *= -3.5;
         }
 
@@ -1049,7 +1057,6 @@ function Graph2D(canvas) {
     };
 
 
-    // TODO: Broken AF.
     var _centerOnNodes = function () {
 
         if (!_nodes || _nodes.length === 0) {
@@ -1059,12 +1066,12 @@ function Graph2D(canvas) {
         var average = _nodesCenter(_nodes);
         var canvasSize = _getCanvasSize();
 
-        var desiredPos = [average[0] + (canvasSize[0]/_scale/2),
-                          average[1] + (canvasSize[1]/_scale/2)];
+        var desiredPos = [(canvasSize[0] / _scale / 2) -average[0],
+                          (canvasSize[1] / _scale / 2) -average[1]];
 
         var difference = [desiredPos[0] - _xPosition, desiredPos[1] - _yPosition];
 
-        _xPosition += difference[0] * 0.1; 
+        _xPosition += difference[0] * 0.1;
         _yPosition += difference[1] * 0.1;
     };
 
@@ -1087,14 +1094,15 @@ function Graph2D(canvas) {
         if (_backgroundRenderMethod !== null && _backgroundRenderMethod !== undefined) {
             _backgroundRenderMethod(self);
         }
-        self.getContext().fillStyle = "white";
+        
         // Draw center for debugging purposes currentely
-        self.getContext().fillRect(
-                self.getPosition()[0] * _scale,
-                self.getPosition()[1] * _scale,
-                10 * _scale,
-                10 * _scale
-                );
+//        self.getContext().fillStyle = "white";
+//        self.getContext().fillRect(
+//                self.getPosition()[0] * _scale,
+//                self.getPosition()[1] * _scale,
+//                10 * _scale,
+//                10 * _scale
+//                );
 
         // Draw lines to show child parent relationship
         _nodes.forEach(function (node) {
@@ -1144,6 +1152,10 @@ function Graph2D(canvas) {
             _nodes.forEach(function (oN) {
 
                 var gavitationData = {};
+                
+                if(n.isLinkedWith(oN)){
+                    gavitationData.$linkData = n.getLinkData(oN);
+                }
 
                 var pull = _getGravitationalPull(
                         {
@@ -1194,9 +1206,13 @@ function Graph2D(canvas) {
 
                 // Check if the mouse is over the node
                 if (_mouseOverNode(n, _mouseToGraphCoordinates(_lastSeenMousePos))) {
-                    _setNodeAsHovered(n);
+                    if (!n.getRenderData().$mouseOver) {
+                        _setNodeAsHovered(n);
+                    }
                 } else {
-                    _setNodeAsNotHovered(n);
+                    if (n.getRenderData().$mouseOver) {
+                        _setNodeAsNotHovered(n);
+                    }
                 }
 
             }
@@ -1221,7 +1237,7 @@ function Graph2D(canvas) {
         });
         _postRenderQueue = [];
 
-        if (_options.centerOnNodes.value) {
+        if (_options.centerOnNodes.value && (!_itemBeingDraggedOnCanvas || _itemBeingDraggedOnCanvas["itemType"] !== "graph") ) {
             _centerOnNodes();
         }
 

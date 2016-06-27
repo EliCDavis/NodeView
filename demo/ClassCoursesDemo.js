@@ -274,6 +274,58 @@
     graph.setBackgroundRenderMethod(backgroundRender);
 
 
+    graph.setNodeAttractionMethod(function (node1, node2, extraData) {
+
+        var data = extraData;
+        if (data === undefined || data === null) {
+            data = {};
+        }
+
+        var pos1 = node1.pos;
+        var pos2 = node2.pos;
+        var mass1 = node1.mass;
+        var mass2 = node2.mass;
+
+        var xDist = pos2[0] - pos1[0];
+        var yDist = pos2[1] - pos1[1];
+        var dist = Math.sqrt((xDist * xDist) + (yDist * yDist));
+
+        var masses = Math.abs(mass1 * mass2);
+        var attraction = (masses / (dist * dist)) * 1.1;
+
+        // If we're too close then let's reject
+        if (dist < mass1 + mass2) {
+            attraction *= -3.5;
+        }
+
+
+        if (data.$groupPos) {
+            attraction = .05;
+        }
+
+
+        if (node1.node && node2.node) {
+
+            if (node1.node.isLinkedWith(node2.node)) {
+                attraction *= 2;
+                
+                if(extraData.$linkData.$directedTowards){
+                    
+                    if(node1.getId() === extraData.$linkData.$directedTowards.getId()){
+                        attraction = 0;
+                    }
+                    
+                }
+                
+            } else {
+                attraction = attraction < 0 ? attraction : 0;
+            }
+
+        }
+
+        return attraction;
+    });
+
     var nodeRender = function (node, nodeCanvasPos, graph) {
 
         var mainColor = node.getRenderData()["color"];
@@ -292,7 +344,6 @@
         ctx.fill();
 
         if (node.getRenderData().$mouseOver || node.getRenderData().$neighborMouseOver) {
-
 
             if (!node.getRenderData().$neighborMouseOver) {
                 // Draw a black circle in the middle..
@@ -353,7 +404,64 @@
 
     graph.setDefaultNodeRenderAndMouseDetection(nodeRender, nodeDetection);
 
+
+    graph.setLinkRenderMethod(function (g, point1, point2, link) {
+
+        var ctx = g.getContext();
+        var scale = g.getScale();
+
+        if (link.nodes[0].getRenderData().$mouseOver || link.nodes[1].getRenderData().$mouseOver) {
+            ctx.strokeStyle = '#FF0000';
+        } else {
+            ctx.strokeStyle = '#ffffff';
+        }
+
+        ctx.lineWidth = 5 * scale;
+        ctx.beginPath();
+        ctx.moveTo(point1[0], point1[1]);
+        ctx.lineTo(point2[0], point2[1]);
+        ctx.stroke();
+
+        var center = [(point1[0] + point2[0]) / 2, (point1[1] + point2[1]) / 2];
+
+        // Figure out the direction of the link
+        var direction = null;
+        if (link.linkData.$directedTowards) {
+            var endPoint = link.linkData.$directedTowards.getPosition();
+            var startPoint = null; 
+            if(link.linkData.$directedTowards.getId() === link.nodes[0].getId()){
+                startPoint = link.nodes[1].getPosition();
+            } else {
+                startPoint = link.nodes[0].getPosition();
+            }
+
+            direction = [endPoint[0] - startPoint[0], endPoint[1] - startPoint[1]];
+
+            var mag = Math.sqrt((direction[0] * direction[0]) +
+                                (direction[1] * direction[1]));
+
+            direction = [direction[0] / mag, direction[1] / mag];
+
+        }
+
+        // Draws an arrow
+        for (var i = 0; i < 7; i++) {
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.beginPath();
+            ctx.arc(center[0]+ (direction[0]*i*10*scale),
+                    center[1]+ (direction[1]*i*10*scale),
+                    (16- (i*2)) * scale,
+                    0,
+                    2 * Math.PI);
+
+            ctx.fill();
+        }
+
+    });
+
+
     var nodes = {};
+
 
     renderResults.forEach(function (course) {
         nodes[course.id] = {
@@ -382,7 +490,9 @@
                 for (var i = 0; i < prereq.length; i++) {
                     Object.keys(prereq[i]).forEach(function (key) {
 
-                        graph.linkNodes(nodes[nodeKey].node, nodes[key].node);
+                        graph.linkNodes(nodes[nodeKey].node, nodes[key].node, {
+                            $directedTowards: nodes[key].node
+                        });
 
                     });
                 }
@@ -391,7 +501,9 @@
             if (prereq.constructor === Object) {
                 Object.keys(prereq).forEach(function (key) {
 
-                    graph.linkNodes(nodes[nodeKey].node, nodes[key].node);
+                    graph.linkNodes(nodes[nodeKey].node, nodes[key].node, {
+                        $directedTowards: nodes[key].node
+                    });
 
                 });
 

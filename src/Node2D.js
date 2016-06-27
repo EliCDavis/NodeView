@@ -150,6 +150,12 @@ function Node2D() {
     };
 
 
+    self.setVelocity = function(x,y){
+        console.log("Velocity set");
+        _velocityVector = [x,y];
+    };
+
+
     self.accelerate = function (x, y) {
 
         var maxSpeed = 30000;
@@ -165,7 +171,6 @@ function Node2D() {
         var xdir = _velocityVector[0] > 0 ? -1 : 1;
         var ydir = _velocityVector[1] > 0 ? -1 : 1;
 
-        //console.log(Math.sqrt(_velocityVector[0])*deltaTime*xdir);
         _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0])) * deltaTime * xdir * 2;
         _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1])) * deltaTime * ydir * 2;
     };
@@ -206,7 +211,6 @@ function Node2D() {
             y = x[1];
             x = x[0];
         }
-        //console.log("running");
         return Math.sqrt(Math.pow(x - _xPosition, 2) + Math.pow(y - _yPosition, 2));
 
     };
@@ -410,14 +414,17 @@ function Node2D() {
     };
 
 
-    self.addLink = function (linkNode) {
+    self.addLink = function (linkNode, data) {
 
         if (linkNode === null || linkNode === undefined) {
             throw "Failure to link node!  Link node was: " + linkNode;
             return;
         }
 
-        _links.push(linkNode);
+        _links.push({
+            node: linkNode,
+            linkData: data
+        });
 
     };
 
@@ -428,12 +435,24 @@ function Node2D() {
     self.isLinkedWith = function(nodeLinkedWith){
         
         for(var i  = 0; i < _links.length; i ++){
-            if(_links[i].getId() === nodeLinkedWith.getId()){
+            if(_links[i].node.getId() === nodeLinkedWith.getId()){
                 return true;
             }
         }
         
         return false;
+    };
+    
+    
+    self.getLinkData = function(node){
+        
+        for(var i  = 0; i < _links.length; i ++){
+            if(_links[i].node.getId() === node.getId()){
+                return _links[i].node;
+            }
+        }
+        
+        return null;
     };
     
     
