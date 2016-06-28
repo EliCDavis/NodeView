@@ -25,6 +25,18 @@
 
 (function(){
     
+    if(localStorage["demo"] !== 'galaxy'){
+        return;
+    }
+    
+   document.getElementById("demo-specific-html").innerHTML = "I got the idea for\
+        this demo when writing the node attraction and translation methods.  I \
+        overrode the attraction method function in this demo to cause chaos.  Zooming\
+        out kinda makes it look like stars.  So I made a small star name generator\
+        and implemented a clustering libary I found to create clusters.<br/><br/>\
+        <h3>Warning! This will cause your tab to freeze for a few seconds!</h3>\
+        <button onclick='Window.clusterStars()'>Click Here To Generate Constellations</button>";
+    
     var starSyllables = [
         "aca",
         "crux",
@@ -162,13 +174,42 @@
     graph.setLinkRenderMethod(linkRender);
     graph.setDefaultNodeRenderAndMouseDetection(nodeRender, nodeDetection);
     
-    var node1 = graph.createNode();
-    var node2 = graph.createNode();
-    var node3 = graph.createNode();
     
-    node3.addChild(node2);
-    node3.addChild(node1);
-    graph.linkNodes(node1, node2);
+    graph.setNodeAttractionMethod(function (node1, node2, extraData) {
+
+        var data = extraData;
+        if (data === undefined || data === null) {
+            data = {};
+        }
+
+        var pos1 = node1.pos;
+        var pos2 = node2.pos;
+        var mass1 = node1.mass;
+        var mass2 = node2.mass;
+
+        var xDist = pos2[0] - pos1[0];
+        var yDist = pos2[1] - pos1[1];
+        var dist = Math.sqrt((xDist * xDist) + (yDist * yDist));
+
+        // Yeah you know what this is.
+        var masses = Math.abs(mass1 * mass2);
+
+        // Yeah this is physics dude.
+        var attraction = (masses / (dist * dist)) * 3.1;
+
+        // If we're too close then let's reject
+        if (dist < mass1 + mass2) {
+            attraction *= -0.8;
+        }
+
+        if (data["$groupPos"]) {
+            attraction = .05;
+        }
+
+        return attraction;
+
+    });
+    
     
     for (var i = 0; i < 400; i++) {
         var node = graph.createNode();
@@ -178,48 +219,48 @@
         node.setRenderDataByKey('name',createRandomStarName());
     }
 
-//    setInterval(function (){
-//        
-//        graph.clearLinks();
-//        
-//        //number of clusters, defaults to undefined
-//        clusterMaker.k(50);
-//
-//        //number of iterations (higher number gives more time to converge), defaults to 1000
-//        clusterMaker.iterations(500);
-//
-//        //data from which to identify clusters, defaults to []
-//        var nodes = graph.getNodes();
-//        var nodePositionData = [];
-//        nodes.forEach(function(node){
-//            nodePositionData.push(node.getPosition());
-//        });
-//        
-//        clusterMaker.data(nodePositionData);
-//
-//        var clusters = clusterMaker.clusters();
-//        
-//        clusters.forEach(function(cluster){
-//            
-//            var nodesInCluster = [];
-//            
-//            cluster.points.forEach(function(point){
-//                nodesInCluster.push(graph.getNodeClosestToPoint(point));
-//            });
-//            
-//            for(var i = 0; i < nodesInCluster.length; i ++){
-//                graph.linkNodes(nodesInCluster[i], 
-//                                nodesInCluster[Math.floor((Math.random() * nodesInCluster.length))]);
-//            }
-//            
-//        });
-//        
-//    }, 120000);
+
+    Window.clusterStars = function(){
+        
+        graph.clearLinks();
+        
+        //number of clusters, defaults to undefined
+        clusterMaker.k(50);
+
+        //number of iterations (higher number gives more time to converge), defaults to 1000
+        clusterMaker.iterations(500);
+
+        //data from which to identify clusters, defaults to []
+        var nodes = graph.getNodes();
+        var nodePositionData = [];
+        nodes.forEach(function(node){
+            nodePositionData.push(node.getPosition());
+        });
+        
+        clusterMaker.data(nodePositionData);
+
+        var clusters = clusterMaker.clusters();
+        
+        clusters.forEach(function(cluster){
+            
+            var nodesInCluster = [];
+            
+            cluster.points.forEach(function(point){
+                nodesInCluster.push(graph.getNodeClosestToPoint(point));
+            });
+            
+            for(var i = 0; i < nodesInCluster.length; i ++){
+                graph.linkNodes(nodesInCluster[i], 
+                                nodesInCluster[Math.floor((Math.random() * nodesInCluster.length))]);
+            }
+            
+        });
+        
+    };
 
 //    setInterval(function () {
 //        graph.createNode();
 //    }, 10);
-    
     
 })();
 

@@ -6,9 +6,9 @@ and open the template in the editor.
 -->
 <html>
     <head>
-        
+
         <title>Node View</title>
-        
+
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href='https://fonts.googleapis.com/css?family=Arizonia' rel='stylesheet' type='text/css'>
@@ -19,42 +19,137 @@ and open the template in the editor.
 
             #cv {
                 position:absolute;
-                width:80%;
+                width:100%;
                 height:100%;
+            }
+
+            .floating-panel {
+                margin: 3%;
+                position: fixed;
+                z-index: 1;
+                max-height: 90%;
+                overflow: auto;
+            }
+
+            .info-hidden {
+                display: none;
+            }
+
+            .info-showing {
+                display: block;
+                color: #F5F5F5;
+                border-width: 1px;
+                border-style: solid;
+                border-color: white;
+                border-radius: 4%;
+                padding:3%;
+                background-color:rgba(1, 1, 1, 0.5);
+                
             }
             
-            #sidebar {
-                height:100%;
-                width:20%;
-                display: inline-block;
-                background-color: #6A8D9D;
-                border-right-width: 0.4em;
-                border-right-style: solid;
-                border-right-color: #466675;
+            button {
+                border-radius: 3%;
+                border-style: solid;
+                border-width: 1px;
+                margin: 1%;
+                padding:1%;
             }
+            
+            a {
+                color: greenyellow;
+            }
+
+            @media screen and (min-width: 768px)  {
+                .mobile-show{ max-width: 30%;}
+            }
+
         </style>
 
     </head>
-    
+
     <body>
-        
-        <div id="sidebar">
-            <br/>
+
+        <div class="mobile-show floating-panel">
             <center>
-                <h1 style="font-family: 'Arizonia', cursive; font-size: 450%; color:#F5F5F5; padding: 3%;">
-                    Node View<br/>
-                    <small style="font-family: 'serif'; font-size: 40%; color:#F5F5F5; padding: 2%;">Go on, touch 'em.</small>
+                <h1 style="font-family: 'Arizonia', cursive; font-size: 300%; color:#F5F5F5; padding: 0%;">
+                    Node View
                 </h1>
+
+                <small style="font-family: 'serif'; font-size: 120%; color:#F5F5F5; padding: 0%;">Go on, touch 'em.</small>
+
+                <br/>
+
+                <p id="hover-for-display" onclick='revealHiddenInformation()' onmouseover="revealHiddenInformation()" style="color:#F5F5F5; font-size: 80%">
+                    <br/>
+                    (Hover This Text For Info)
+                </p>
+
+                <br/>
+
+                <div id="secret-info" class="info-hidden" style='max-height: 60%;'>
+
+                    <p>
+                        Node View is a node rendering library that utilize's HTML5's
+                        canvas to allow developers to have full control over how they
+                        want their data represented without having to worry about the
+                        boring part of the rendering process.
+                    </p>
+
+                    <br/>
+                    
+                    <h3>This Demo</h3>
+                    <div id='demo-specific-html'>
+
+                    </div>
+
+                    <br/>
+                    <h3>Other Demos</h3>
+                    <button onclick='seDemo()'>Software Engineering Classes</button><br/>
+                    <button onclick='galaxyDemo()'>Galaxy (Be Sure to Zoom Out)</button>
+                    
+                    <br/><br/>
+                    <h3>Github</h3>
+                    <p>Go open up an issue on the <a href="https://github.com/EliCDavis/NodeView">Github Repo</a></p>
+                
+                    <br/>
+                    <button onclick='hideInformation()'>Close This Panel</button>
+                </div>
+
             </center>
         </div>
-        
+
         <canvas id="cv">
             You don't support Canvas from HTML 5.  Upgrade your browser dude jeez
         </canvas>
-        
+
+        <script>
+
+            function revealHiddenInformation() {
+                document.getElementById("secret-info").className = "info-showing";
+                document.getElementById("hover-for-display").className = "info-hidden";
+            }
+            
+            function hideInformation(){
+                document.getElementById("secret-info").className = "info-hidden";
+                document.getElementById("hover-for-display").className = "info-showing";
+            }
+            
+            function galaxyDemo(){
+                localStorage["demo"] = "galaxy";
+                location.reload(false);
+            }
+            
+            function seDemo(){
+                localStorage["demo"] = "se";
+                location.reload(false);
+            }
+
+        </script>
+
         <script src="nodeview.min.js"></script>
         <script src="libs/clusters.js"></script>
-        <!--<script src="UniverseDemo.js"></script>-->
+        <script src="UniverseDemo.js"></script>
+        <script src="SECourses.js"></script>
         <script src="ClassCoursesDemo.js"></script>
     </body>
 </html>

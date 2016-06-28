@@ -25,6 +25,19 @@
 
 (function () {
 
+    if(localStorage["demo"] !== 'se' && localStorage["demo"]){
+        return;
+    }
+
+     document.getElementById("demo-specific-html").innerHTML = "The nodes in this\
+        demo represent the different CSE related courses that software engineers\
+        must take to complete their undergrad.  Green nodes are courses I have\
+        completed.  Yellow ones are those I can take, and red are courses that I\
+        don't lack the prequisites to take.  You can look at the data I used to\
+        generate theses nodes <a href='/SECourses.js'>here</a>.  Classes with more\
+        hours are larger, and those with labs have their size multiplied by a constant\
+        to become even larger.";
+
     // http://reactivex.io/learnrx/
     Array.prototype.map = function (projectionFunction) {
         var results = [];
@@ -37,151 +50,6 @@
     };
 
     var seniorStatus = false;
-
-    var seCourses = [
-        {
-            "id": "CSE-1002",
-            "name": "Intro CSE",
-            "completed": true,
-            "hours": 2,
-            "lab": false
-        },
-        {
-            "id": "CSE-1284",
-            "name": "Intro Comp Prog",
-            "completed": true,
-            "hours": 4,
-            "lab": true
-        },
-        {
-            "id": "CSE-1384",
-            "name": "Intermed Comp Prog",
-            "completed": true,
-            "prereq": [{"CSE-1284": "C"}],
-            "hours": 4,
-            "lab": true
-        },
-        {
-            "id": "CSE-2383",
-            "name": "Data Struc & Anal of Alg",
-            "completed": true,
-            "prereq": [{"CSE-1384": "C"}],
-            "hours": 3,
-            "lab": true
-        },
-        {
-            "id": "CSE-2813",
-            "name": "Discrete Structures",
-            "completed": true,
-            "prereq": [{"CSE-1284": "C"}],
-            "hours": 3,
-            "lab": true
-        },
-        {
-            "id": "CSE-3324",
-            "name": "Dist Client/Server Prog",
-            "completed": true,
-            "prereq": [{"CSE-2383": "C"}],
-            "hours": 4,
-            "lab": true
-        },
-        {
-            "id": "CSE-4214",
-            "name": "Intro to Software Eng",
-            "completed": true,
-            "prereq": [{"CSE-2383": "C"}],
-            "hours": 4,
-            "lab": true
-        },
-        {
-            "id": "ECE-3714",
-            "name": "Digital Devices",
-            "completed": true,
-            "prereq": [{"CSE-1284": "C"}],
-            "hours": 4,
-            "lab": true
-        },
-        {
-            "id": "ECE-3724",
-            "name": "Microprocessors",
-            "completed": true,
-            "prereq": [{"CSE-1284": "C"}],
-            "hours": 4,
-            "lab": true
-        },
-        {
-            "id": "CSE-3213",
-            "name": "Software Eng Sr Project I",
-            "completed": false,
-            "prereq": [{"CSE-4214": "C"}],
-            "hours": 3,
-            "lab": true
-        },
-        {
-            "id": "CSE-3223",
-            "name": "Software Eng Sr Project II",
-            "completed": false,
-            "prereq": [{"CSE-4214": "C"}],
-            "hours": 3,
-            "lab": true
-        },
-        {
-            "id": "CSE-3981",
-            "name": "Computer Ethics",
-            "completed": false,
-            "prereq": ["Senior standing"],
-            "hours": 1,
-            "lab": false
-        },
-        {
-            "id": "CSE-4153",
-            "name": "Data Comm Networks",
-            "completed": false,
-            "prereq": [{"CSE-1384": "C"}],
-            "hours": 3,
-            "lab": false
-        },
-        {
-            "id": "CSE-4233",
-            "name": "SW Arch & Design",
-            "completed": false,
-            "prereq": [{"CSE-4214": "C"}],
-            "hours": 3,
-            "lab": false
-        },
-        {
-            "id": "CSE-4283",
-            "name": "Software Testing and QA",
-            "completed": false,
-            "prereq": [{"CSE-4214": "C"}],
-            "hours": 3,
-            "lab": false
-        },
-        {
-            "id": "CSE-4503",
-            "name": "Database Management Systems",
-            "completed": false,
-            "prereq": [{"CSE-2383": "C"}, {"CSE-2813": "C"}],
-            "hours": 3,
-            "lab": false
-        },
-        {
-            "id": "CSE-4733",
-            "name": "Operating Systems I",
-            "completed": false,
-            "prereq": [{"CSE-2383": "C"}, {"ECE-3724": "C"}],
-            "hours": 3,
-            "lab": false
-        },
-        {
-            "id": "CSE-4833",
-            "name": "Intro to Algorithms",
-            "completed": false,
-            "prereq": [{"CSE-2383": "C"}, {"CSE-2813": "C"}],
-            "hours": 3,
-            "lab": false
-        }
-    ];
 
     var graph = new Graph2D(document.getElementById("cv"));
 
@@ -199,7 +67,7 @@
             }
         }
 
-        throw ("Can't find " + courseId);
+        throw "Can't find ", courseId;
         return false;
     }
 
@@ -266,12 +134,11 @@
     });
 
 
-    var backgroundRender = function (graph) {
+    graph.setBackgroundRenderMethod(function (graph) {
         var ctx = graph.getContext();
         ctx.fillStyle = "#660000";
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    };
-    graph.setBackgroundRenderMethod(backgroundRender);
+    });
 
 
     graph.setNodeAttractionMethod(function (node1, node2, extraData) {
@@ -308,15 +175,15 @@
 
             if (node1.node.isLinkedWith(node2.node)) {
                 attraction *= 2;
-                
-                if(extraData.$linkData.$directedTowards){
-                    
-                    if(node1.getId() === extraData.$linkData.$directedTowards.getId()){
+
+                if (extraData.$linkData.$directedTowards) {
+
+                    if (node1.getId() === extraData.$linkData.$directedTowards.getId()) {
                         attraction = 0;
                     }
-                    
+
                 }
-                
+
             } else {
                 attraction = attraction < 0 ? attraction : 0;
             }
@@ -407,60 +274,60 @@
 
     graph.setLinkRenderMethod(function (g, point1, point2, link) {
 
-        var ctx = g.getContext();
-        var scale = g.getScale();
-
-        if (link.nodes[0].getRenderData().$mouseOver || link.nodes[1].getRenderData().$mouseOver) {
-            ctx.strokeStyle = '#FF0000';
-        } else {
-            ctx.strokeStyle = '#ffffff';
+        if (!link.nodes[0].getRenderData().$mouseOver && !link.nodes[1].getRenderData().$mouseOver) {
+            return;
         }
 
-        ctx.lineWidth = 5 * scale;
-        ctx.beginPath();
-        ctx.moveTo(point1[0], point1[1]);
-        ctx.lineTo(point2[0], point2[1]);
-        ctx.stroke();
+        g.postRender(function () {
+            var ctx = g.getContext();
+            var scale = g.getScale();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 5 * scale;
+            ctx.beginPath();
+            ctx.moveTo(point1[0], point1[1]);
+            ctx.lineTo(point2[0], point2[1]);
+            ctx.stroke();
 
-        var center = [(point1[0] + point2[0]) / 2, (point1[1] + point2[1]) / 2];
+            var center = [(point1[0] + point2[0]) / 2, (point1[1] + point2[1]) / 2];
 
-        // Figure out the direction of the link
-        var direction = null;
-        if (link.linkData.$directedTowards) {
-            var endPoint = link.linkData.$directedTowards.getPosition();
-            var startPoint = null; 
-            if(link.linkData.$directedTowards.getId() === link.nodes[0].getId()){
-                startPoint = link.nodes[1].getPosition();
-            } else {
-                startPoint = link.nodes[0].getPosition();
+            // Figure out the direction of the link
+            var direction = null;
+            if (link.linkData.$directedTowards) {
+                var endPoint = link.linkData.$directedTowards.getPosition();
+                var startPoint = null;
+                if (link.linkData.$directedTowards.getId() === link.nodes[0].getId()) {
+                    startPoint = link.nodes[1].getPosition();
+                } else {
+                    startPoint = link.nodes[0].getPosition();
+                }
+
+                direction = [endPoint[0] - startPoint[0], endPoint[1] - startPoint[1]];
+
+                var mag = Math.sqrt((direction[0] * direction[0]) +
+                        (direction[1] * direction[1]));
+
+                direction = [direction[0] / mag, direction[1] / mag];
+
             }
 
-            direction = [endPoint[0] - startPoint[0], endPoint[1] - startPoint[1]];
+            // Draws an arrow
+            for (var i = 0; i < 7; i++) {
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.beginPath();
+                ctx.arc(center[0] + (direction[0] * i * 10 * scale),
+                        center[1] + (direction[1] * i * 10 * scale),
+                        (16 - (i * 2)) * scale,
+                        0,
+                        2 * Math.PI);
 
-            var mag = Math.sqrt((direction[0] * direction[0]) +
-                                (direction[1] * direction[1]));
-
-            direction = [direction[0] / mag, direction[1] / mag];
-
-        }
-
-        // Draws an arrow
-        for (var i = 0; i < 7; i++) {
-            ctx.fillStyle = ctx.strokeStyle;
-            ctx.beginPath();
-            ctx.arc(center[0]+ (direction[0]*i*10*scale),
-                    center[1]+ (direction[1]*i*10*scale),
-                    (16- (i*2)) * scale,
-                    0,
-                    2 * Math.PI);
-
-            ctx.fill();
-        }
-
+                ctx.fill();
+            }
+        });
     });
 
 
     var nodes = {};
+
 
 
     renderResults.forEach(function (course) {

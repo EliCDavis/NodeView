@@ -82,7 +82,29 @@ function Graph2D(canvas) {
      * @type Object
      */
     var _options = {
+        
+        /*
+         * Whether or not the camera will try centering over the center
+         * of the nodes.
+         */
         centerOnNodes: {
+            "value": true,
+            "constructor": Boolean
+        },
+        
+        /* 
+         * Whether or not to calculate the attraction between two
+         * nodes on a render frame 
+         */
+        applyGravity: {
+            "value": true,
+            "constructor": Boolean
+        },
+        
+        /*
+         * Whether or not to actually move the nodes on the render frame
+         */
+        applyTranslation: {
             "value": true,
             "constructor": Boolean
         }
@@ -260,7 +282,7 @@ function Graph2D(canvas) {
     var _setNodeAsBeingDragged = function (node) {
 
         node.setRenderDataByKey("$beingDragged", true);
-        node.setVelocity(0,0);
+        node.setVelocity(0, 0);
 
         var links = node.getLinks();
 
@@ -548,7 +570,7 @@ function Graph2D(canvas) {
 
     self.clearLinks = function () {
 
-        _nodeLinks.forEach(function (node) {
+        _nodes.forEach(function(node){
             node.clearLinks();
         });
 
@@ -856,7 +878,7 @@ function Graph2D(canvas) {
             if (options && options.freeSpace) {
                 node.setPosition(_getFreeSpace(options.freeSpace));
             } else {
-                node.setPosition(_getFreeSpace(setRadius));
+                node.setPosition(_getFreeSpace(setRadius*3));
             }
         }
 
@@ -890,7 +912,7 @@ function Graph2D(canvas) {
         }
 
         // Make sure the link does not already exist
-        if(n1.isLinkedWith(n2)){
+        if (n1.isLinkedWith(n2)) {
             throw "Nodes are already linked!";
         }
 
@@ -1066,13 +1088,86 @@ function Graph2D(canvas) {
         var average = _nodesCenter(_nodes);
         var canvasSize = _getCanvasSize();
 
-        var desiredPos = [(canvasSize[0] / _scale / 2) -average[0],
-                          (canvasSize[1] / _scale / 2) -average[1]];
+        var desiredPos = [(canvasSize[0] / _scale / 2) - average[0],
+            (canvasSize[1] / _scale / 2) - average[1]];
 
         var difference = [desiredPos[0] - _xPosition, desiredPos[1] - _yPosition];
 
         _xPosition += difference[0] * 0.1;
         _yPosition += difference[1] * 0.1;
+    };
+
+
+    var _applyGravityToNodes = function (nodesToApply) {
+
+        nodesToApply.forEach(function (n) {
+
+            // Apply acceleration to the node based on realtive position to 
+            // center and other nodes.
+            var totalAcceleration = [0, 0];
+            nodesToApply.forEach(function (oN) {
+
+                var gavitationData = {};
+
+                if (n.isLinkedWith(oN)) {
+                    gavitationData.$linkData = n.getLinkData(oN);
+                }
+
+                var pull = _getGravitationalPull(
+                        {
+                            "pos": n.getPosition(),
+                            "mass": n.getRadius(),
+                            "node": n
+                        },
+                        {
+                            "pos": oN.getPosition(),
+                            "mass": oN.getRadius(),
+                            "node": oN
+                        },
+                        gavitationData
+                        );
+
+                // Add to the acceleration.
+                totalAcceleration[0] += pull[0];
+                totalAcceleration[1] += pull[1];
+
+            });
+
+            var pull = _getGravitationalPull(
+                    {
+                        "pos": n.getPosition(),
+                        "mass": n.getRadius(),
+                        "node": n
+                    },
+                    {
+                        "pos": [0, 0],
+                        "mass": n.getRadius() * 2,
+                        "group": true
+                    },
+                    {
+                        "$groupPos": true
+                    });
+
+            totalAcceleration[0] += pull[0] * 5;
+            totalAcceleration[1] += pull[1] * 5;
+
+            n.accelerate(totalAcceleration[0], totalAcceleration[1]);
+
+        });
+
+    };
+
+    var _mouseHoverCheck = function (n) {
+        // Check if the mouse is over the node
+        if (_mouseOverNode(n, _mouseToGraphCoordinates(_lastSeenMousePos))) {
+            if (!n.getRenderData().$mouseOver) {
+                _setNodeAsHovered(n);
+            }
+        } else {
+            if (n.getRenderData().$mouseOver) {
+                _setNodeAsNotHovered(n);
+            }
+        }
     };
 
 
@@ -1094,7 +1189,7 @@ function Graph2D(canvas) {
         if (_backgroundRenderMethod !== null && _backgroundRenderMethod !== undefined) {
             _backgroundRenderMethod(self);
         }
-        
+
         // Draw center for debugging purposes currentely
 //        self.getContext().fillStyle = "white";
 //        self.getContext().fillRect(
@@ -1143,78 +1238,34 @@ function Graph2D(canvas) {
 
         });
 
+
+        if (_options.applyGravity.value) {
+            _applyGravityToNodes(_nodes);
+        }
+
+
         // Draw the nodes them selves
         _nodes.forEach(function (n) {
 
-            // Apply acceleration to the node based on realtive position to 
-            // center and other nodes.
-            var totalAcceleration = [0, 0];
-            _nodes.forEach(function (oN) {
-
-                var gavitationData = {};
-                
-                if(n.isLinkedWith(oN)){
-                    gavitationData.$linkData = n.getLinkData(oN);
-                }
-
-                var pull = _getGravitationalPull(
-                        {
-                            "pos": n.getPosition(),
-                            "mass": n.getRadius(),
-                            "node": n
-                        },
-                        {
-                            "pos": oN.getPosition(),
-                            "mass": oN.getRadius(),
-                            "node": oN
-                        },
-                        gavitationData
-                        );
-
-                // Add to the acceleration.
-                totalAcceleration[0] += pull[0];
-                totalAcceleration[1] += pull[1];
-
-            });
-
-            var pull = _getGravitationalPull(
-                    {
-                        "pos": n.getPosition(),
-                        "mass": n.getRadius(),
-                        "node": n
-                    },
-                    {
-                        "pos": [0, 0],
-                        "mass": n.getRadius() * 2,
-                        "group": true
-                    },
-                    {
-                        "$groupPos": true
-                    });
-
-            totalAcceleration[0] += pull[0] * 5;
-            totalAcceleration[1] += pull[1] * 5;
-
-            n.accelerate(totalAcceleration[0], totalAcceleration[1]);
-
+            var moved = false;
+            
             // Translate the node this frame
-            var moved = n.translate((Date.now() - _lastDrawFrame) / 1000);
+            if(_options.applyTranslation.value){
+                moved = n.translate((Date.now() - _lastDrawFrame) / 1000);
+            }
 
             // TODO: Need to also check if a mouse event happened this frame
             // TODO: Plenty of optimization needed
-            if (moved && _lastSeenMousePos !== null) {
-
-                // Check if the mouse is over the node
-                if (_mouseOverNode(n, _mouseToGraphCoordinates(_lastSeenMousePos))) {
-                    if (!n.getRenderData().$mouseOver) {
-                        _setNodeAsHovered(n);
+            if (_lastSeenMousePos !== null) {
+                
+                if (_options.applyGravity.value && _options.applyTranslation.value) {
+                    if (moved) {
+                        _mouseHoverCheck(n);
                     }
                 } else {
-                    if (n.getRenderData().$mouseOver) {
-                        _setNodeAsNotHovered(n);
-                    }
+                    _mouseHoverCheck(n);
                 }
-
+                
             }
 
             var graphPos = self.getPosition();
@@ -1237,7 +1288,7 @@ function Graph2D(canvas) {
         });
         _postRenderQueue = [];
 
-        if (_options.centerOnNodes.value && (!_itemBeingDraggedOnCanvas || _itemBeingDraggedOnCanvas["itemType"] !== "graph") ) {
+        if (_options.centerOnNodes.value && (!_itemBeingDraggedOnCanvas || _itemBeingDraggedOnCanvas["itemType"] !== "graph")) {
             _centerOnNodes();
         }
 
