@@ -921,11 +921,15 @@ function Graph2D(canvas) {
         n1.addLink(n2, linkData);
         n2.addLink(n1, linkData);
 
-        // Create our link for the graph to keep up with.
-        _nodeLinks.push({
+        var link = {
             "nodes": [n1, n2],
             "linkData": linkData
-        });
+        };
+
+        // Create our link for the graph to keep up with.
+        _nodeLinks.push(link);
+
+        return link;
 
     };
 

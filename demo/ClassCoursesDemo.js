@@ -25,16 +25,16 @@
 
 (function () {
 
-    if(localStorage["demo"] !== 'se' && localStorage["demo"]){
+    if (localStorage["demo"] !== 'se' && localStorage["demo"]) {
         return;
     }
 
-     document.getElementById("demo-specific-html").innerHTML = "The nodes in this\
+    document.getElementById("demo-specific-html").innerHTML = "The nodes in this\
         demo represent the different CSE related courses that software engineers\
         must take to complete their undergrad.  Green nodes are courses I have\
         completed.  Yellow ones are those I can take, and red are courses that I\
-        don't lack the prequisites to take.  You can look at the data I used to\
-        generate theses nodes <a href='/SECourses.js'>here</a>.  Classes with more\
+        lack the prequisites to take.  You can look at the data I used to\
+        generate theses nodes <a href='SECourses.js'>here</a>.  Classes with more\
         hours are larger, and those with labs have their size multiplied by a constant\
         to become even larger.";
 
@@ -71,6 +71,7 @@
         return false;
     }
 
+    // Organize the classes into a format to be rendered in.
     var renderResults = seCourses.map(function (course) {
 
         // Deep Copy
@@ -322,6 +323,23 @@
 
                 ctx.fill();
             }
+            
+            ctx.beginPath();
+            ctx.arc(point1[0],
+                    point1[1],
+                    10 * scale,
+                    0,
+                    2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(point2[0],
+                    point2[1],
+                    10 * scale,
+                    0,
+                    2 * Math.PI);
+            ctx.fill();
+            
         });
     });
 
