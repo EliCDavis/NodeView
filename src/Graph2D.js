@@ -349,15 +349,11 @@ function Graph2D(canvas) {
             return;
         }
 
-        var coords = _mouseToGraphCoordinates(event);
-
         // Figure out what Node was clicked (if any) and call their onclick function
         _nodes.forEach(function (node) {
 
-            if (node.wasClicked(self, [coords.x, coords.y])) {
-                if (node.onclick !== null && node.onclick !== undefined) {
-                    node.onclick();
-                }
+            if (_mouseOverNode(node, _mouseToGraphCoordinates(event))) {
+                node.onclick();
             }
 
         });
@@ -577,6 +573,10 @@ function Graph2D(canvas) {
         _nodeLinks = [];
     };
 
+    self.clearNodes = function(){
+        _nodes = [];
+    };
+
     self.getNodeClosestToPoint = function (point) {
 
         var closestNode = null;
@@ -763,30 +763,45 @@ function Graph2D(canvas) {
      * The default node rendering function assigned to all nodes upon creation
      * 
      * @param {Node2D} node The node being rendered
-     * @param {Array[x,y]} nodePosOnCanvas The nodes getPosition() returns it's
+     * @param {Array[x,y]} nodeCanvasPos The nodes getPosition() returns it's
      * position in graph coordinates.  nodePosOnCanvas is where the node is on
      * canvas coordinates.
      * @param {Graph2D} graph The graph that the node is apart of
      * @returns {undefined}
      */
-    var _defaultNodeRender = function (node, nodePosOnCanvas, graph) {
+    var _defaultNodeRender = function (node, nodeCanvasPos, graph) {
 
-        // TODO: do input santizing
-
-        var scale = graph.getScale();
-        var nodeSize = node.getRenderData()['size'];
-
-        var startPos = [nodePosOnCanvas[0] - ((nodeSize[0] / 2) * scale),
-            nodePosOnCanvas[1] - ((nodeSize[1] / 2) * scale)];
-
-
-        graph.getContext().fillStyle = node.getRenderData()['color'];
-        graph.getContext().fillRect(
-                startPos[0],
-                startPos[1],
-                nodeSize[0] * scale,
-                nodeSize[1] * scale
-                );
+        var ctx = graph.getContext();
+        ctx.fillStyle = node.getRenderData()["color"];
+        ctx.beginPath();
+        ctx.arc(nodeCanvasPos[0], 
+                nodeCanvasPos[1], 
+                node.getRadius()*graph.getScale()*.8, 
+                0, 
+                2 * Math.PI);
+        ctx.fill();
+        
+        if(node.getRenderData()['$mouseOver']){
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(nodeCanvasPos[0],
+                    nodeCanvasPos[1],
+                    node.getRadius() * graph.getScale() * .8*.5,
+                    0,
+                    2 * Math.PI);
+            ctx.fill();
+        }
+        
+        if (node.getRenderData()['$beingDragged']) {
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(nodeCanvasPos[0],
+                    nodeCanvasPos[1],
+                    node.getRadius() * graph.getScale() * .8*.3,
+                    0,
+                    2 * Math.PI);
+            ctx.fill();
+        }
 
     };
 
@@ -800,15 +815,7 @@ function Graph2D(canvas) {
      * @returns {unresolved}
      */
     var _defaultNodeMouseDetection = function (node, graph, mousePos) {
-
-        var nodeSize = node.getRenderData()['size'];
-
-        var startPos = [(node.getPosition()[0] - (nodeSize[0] / 2)),
-            (node.getPosition()[1] - (nodeSize[1] / 2))];
-
-        var endPos = [nodeSize[0], nodeSize[1]];
-
-        return pointsInsideRect([startPos[0], startPos[1], endPos[0], endPos[1]], mousePos);
+       return (node.distanceFrom(mousePos) <= node.getRadius() * .6);
     };
 
 
@@ -860,7 +867,6 @@ function Graph2D(canvas) {
                 node.setRenderDataByKey(key, options.renderData[key]);
             });
         } else {
-            node.setRenderDataByKey('size', [40, 40]);
             node.setRenderDataByKey('color', '#000000');
         }
 
@@ -878,7 +884,7 @@ function Graph2D(canvas) {
             if (options && options.freeSpace) {
                 node.setPosition(_getFreeSpace(options.freeSpace));
             } else {
-                node.setPosition(_getFreeSpace(setRadius*3));
+                node.setPosition(_getFreeSpace(setRadius*4));
             }
         }
 

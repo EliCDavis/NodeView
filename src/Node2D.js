@@ -294,6 +294,8 @@ function Node2D() {
      */
     self.wasClicked = function (graph, mousePos) {
 
+        console.log("detection: ",_clickDetectionfunction);
+
         if (_clickDetectionfunction !== null && _clickDetectionfunction !== undefined) {
 
             var result = _clickDetectionfunction(self, graph, mousePos);

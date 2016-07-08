@@ -123,7 +123,8 @@ THE SOFTWARE.
                     <br/>
                     <h3>Other Demos</h3>
                     <button onclick='seDemo()'>Software Engineering Classes</button><br/>
-                    <button onclick='galaxyDemo()'>Galaxy (Be Sure to Zoom Out)</button>
+                    <button onclick='galaxyDemo()'>Galaxy (Be Sure to Zoom Out)</button><br/>
+                    <button onclick='repoSearchDemo()'>Github Repo Search</button>
                     
                     <br/><br/>
                     <h3>Github</h3>
@@ -161,6 +162,11 @@ THE SOFTWARE.
                 localStorage["demo"] = "se";
                 location.reload(false);
             }
+            
+            function repoSearchDemo(){
+                localStorage["demo"] = "ghub";
+                location.reload(false);
+            }
 
         </script>
 
@@ -169,5 +175,6 @@ THE SOFTWARE.
         <script src="UniverseDemo.js"></script>
         <script src="SECourses.js"></script>
         <script src="ClassCoursesDemo.js"></script>
+        <script src="GithubSearchDemo.js"></script>
     </body>
 </html>

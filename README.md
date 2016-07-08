@@ -78,6 +78,7 @@ graphInstance.linkNodes(node1:Node2D, node2:Node2D, ?linkData:Object);
 
 Current variables modified by the graph:
 * **$directedTowards** *(Node2D)*: Specifies the direction of said link.  Graph2D does not modify this variable, only looks at it
+
 #### Example:
 ```js
 var node1 = new Node2D();
