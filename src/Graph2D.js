@@ -353,7 +353,7 @@ function Graph2D(canvas) {
         _nodes.forEach(function (node) {
 
             if (_mouseOverNode(node, _mouseToGraphCoordinates(event))) {
-                node.onclick();
+                node.onclick(node);
             }
 
         });
@@ -673,6 +673,105 @@ function Graph2D(canvas) {
         averageCenter[1] = total[1] / nodesToAverage.length;
 
         return averageCenter;
+    };
+
+
+    var _scaleToBounds = function(bounds){
+        
+       
+        
+        var desiredScale = _scale;
+        
+        if(bounds[2] > bounds[3]){
+            
+            // Scale by width
+            var desiredWidth = bounds[2] - bounds[0];
+            var currentUnscaledWidth = _getCanvasSize()[0];
+            
+            desiredScale = currentUnscaledWidth/desiredWidth;
+            
+        } else {
+
+            // Scale by height
+            var desiredHeight = bounds[3] - bounds[1];
+            var currentUnscaledHeight = _getCanvasSize()[1];
+            
+            desiredScale = currentUnscaledHeight/desiredHeight;
+        }
+        
+        var direction = desiredScale - _scale;
+            
+        _scale += direction * 0.1;
+        
+    };
+
+    
+    var _nodeFitsInBounds = function(node, bounds) {
+        
+        var xPos = node.getPosition()[0];
+        var yPos = node.getPosition()[1];
+        var r = node.getRadius();
+        
+        if(bounds[0] > xPos-r){
+            return false;
+        }
+        
+        if(bounds[0]+bounds[2] < xPos+r){
+            return false;
+        }
+        
+        if(bounds[1] > yPos-r){
+            return false;
+        }
+        
+        if(bounds[1]+bounds[3] < yPos+r){
+            return false;
+        }
+        
+        return true;
+        
+    };
+
+
+    var _extendBoundsForNode = function(node, bounds){
+        
+        if(_nodeFitsInBounds(node, bounds)){
+            return bounds;
+        }
+        
+        var xPos = node.getPosition()[0];
+        var yPos = node.getPosition()[1];
+        var r = node.getRadius();
+        
+        if(bounds[0] > xPos-r){
+            bounds[0] = xPos-r;
+        }
+        
+        if(bounds[0]+bounds[2] < xPos+r){
+            bounds[2] = xPos+r-bounds[2];
+        }
+        
+        if(bounds[1] > yPos-r){
+            bounds[1] = yPos-r;
+        }
+        
+        if(bounds[1]+bounds[3] < yPos+r){
+            bounds[3] = yPos+r-bounds[1];
+        }
+        
+        return bounds;
+    };
+    
+    var _getBoundsFromNodes = function(nodes){
+        
+        var curBounds = [0,0,0,0];
+    
+        nodes.forEach(function(node) {
+            curBounds = _extendBoundsForNode(node, curBounds);
+        });
+        
+        return curBounds;
+        
     };
 
 
@@ -1105,6 +1204,8 @@ function Graph2D(canvas) {
 
         _xPosition += difference[0] * 0.1;
         _yPosition += difference[1] * 0.1;
+        
+        _scaleToBounds(_getBoundsFromNodes(_nodes));
     };
 
 

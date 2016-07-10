@@ -124,7 +124,8 @@ THE SOFTWARE.
                     <h3>Other Demos</h3>
                     <button onclick='seDemo()'>Software Engineering Classes</button><br/>
                     <button onclick='galaxyDemo()'>Galaxy (Be Sure to Zoom Out)</button><br/>
-                    <button onclick='repoSearchDemo()'>Github Repo Search</button>
+                    <button onclick='repoSearchDemo()'>GitHub Repo Search</button><br/>
+                    <button onclick='popularRepoDemo()'>Popular GitHub Repositories</button>
                     
                     <br/><br/>
                     <h3>Github</h3>
@@ -167,6 +168,11 @@ THE SOFTWARE.
                 localStorage["demo"] = "ghub";
                 location.reload(false);
             }
+            
+            function popularRepoDemo(){
+                localStorage["demo"] = "popghub";
+                location.reload(false);
+            }
 
         </script>
 
@@ -176,5 +182,6 @@ THE SOFTWARE.
         <script src="SECourses.js"></script>
         <script src="ClassCoursesDemo.js"></script>
         <script src="GithubSearchDemo.js"></script>
+        <script src="PopularRepoDemo.js"></script>
     </body>
 </html>
