@@ -151,7 +151,6 @@ function Node2D() {
 
 
     self.setVelocity = function(x,y){
-        console.log("Velocity set");
         _velocityVector = [x,y];
     };
 

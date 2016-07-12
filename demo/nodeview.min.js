@@ -678,14 +678,12 @@ function Graph2D(canvas) {
 
     var _scaleToBounds = function(bounds){
         
-       
-        
         var desiredScale = _scale;
         
-        if(bounds[2] > bounds[3]){
+        if(_getCanvasSize()[0] < _getCanvasSize()[1]){
             
             // Scale by width
-            var desiredWidth = bounds[2] - bounds[0];
+            var desiredWidth = bounds[2];
             var currentUnscaledWidth = _getCanvasSize()[0];
             
             desiredScale = currentUnscaledWidth/desiredWidth;
@@ -693,7 +691,7 @@ function Graph2D(canvas) {
         } else {
 
             // Scale by height
-            var desiredHeight = bounds[3] - bounds[1];
+            var desiredHeight = bounds[3];
             var currentUnscaledHeight = _getCanvasSize()[1];
             
             desiredScale = currentUnscaledHeight/desiredHeight;
@@ -707,6 +705,12 @@ function Graph2D(canvas) {
 
     
     var _nodeFitsInBounds = function(node, bounds) {
+        
+        for(var i = 0; i < bounds.length; i ++){
+            if(bounds[i] === null){
+                return false;
+            }
+        }
         
         var xPos = node.getPosition()[0];
         var yPos = node.getPosition()[1];
@@ -739,19 +743,34 @@ function Graph2D(canvas) {
             return bounds;
         }
         
+        for(var i = 0; i < bounds.length; i ++){
+            if(bounds[i] === null){
+                var r = node.getRadius();
+                return [
+                    node.getPosition()[0]-(r/2),
+                    node.getPosition()[1]-(r/2),
+                    r,
+                    r
+                ];
+            }
+        }
+        
         var xPos = node.getPosition()[0];
         var yPos = node.getPosition()[1];
         var r = node.getRadius();
         
         if(bounds[0] > xPos-r){
-            bounds[0] = xPos-r;
+            var newBound = xPos-r;
+            bounds[2] += Math.abs(bounds[0] - newBound);
+            bounds[0] = newBound;
         }
         
         if(bounds[0]+bounds[2] < xPos+r){
-            bounds[2] = xPos+r-bounds[2];
+            bounds[2] = xPos+r-bounds[0];
         }
         
         if(bounds[1] > yPos-r){
+            bounds[3] += Math.abs(yPos-r - bounds[1]);
             bounds[1] = yPos-r;
         }
         
@@ -762,9 +781,9 @@ function Graph2D(canvas) {
         return bounds;
     };
     
-    var _getBoundsFromNodes = function(nodes){
+    self.getBoundsFromNodes = function(nodes){
         
-        var curBounds = [0,0,0,0];
+        var curBounds = [null,null,null,null];
     
         nodes.forEach(function(node) {
             curBounds = _extendBoundsForNode(node, curBounds);
@@ -1193,19 +1212,22 @@ function Graph2D(canvas) {
         if (!_nodes || _nodes.length === 0) {
             return;
         }
+        
+        var bounds = self.getBoundsFromNodes(_nodes);
+        
+        _scaleToBounds(bounds);
 
-        var average = _nodesCenter(_nodes);
+        var average = [bounds[0]+(bounds[2]/2), bounds[1]+(bounds[3]/2)];
         var canvasSize = _getCanvasSize();
 
         var desiredPos = [(canvasSize[0] / _scale / 2) - average[0],
-            (canvasSize[1] / _scale / 2) - average[1]];
+                          (canvasSize[1] / _scale / 2) - average[1]];
 
         var difference = [desiredPos[0] - _xPosition, desiredPos[1] - _yPosition];
 
         _xPosition += difference[0] * 0.1;
         _yPosition += difference[1] * 0.1;
         
-        _scaleToBounds(_getBoundsFromNodes(_nodes));
     };
 
 
@@ -1566,7 +1588,6 @@ function Node2D() {
 
 
     self.setVelocity = function(x,y){
-        console.log("Velocity set");
         _velocityVector = [x,y];
     };
 

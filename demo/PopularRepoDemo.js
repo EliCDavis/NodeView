@@ -40,6 +40,16 @@
         ctx.fillStyle = "#4078c0";
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         
+        // Draw a box around the bounds
+        var nodeBounds = graph.getBoundsFromNodes(graph.getNodes());
+        var graphPos = graph.getPosition();
+        var graphScale = graph.getScale();
+        ctx.fillStyle = "#9fbbdf";
+        ctx.fillRect((nodeBounds[0] + graphPos[0]) * graphScale,
+                     (nodeBounds[1] + graphPos[1]) * graphScale,
+                      nodeBounds[2]*graphScale, 
+                      nodeBounds[3]*graphScale);
+        
     });
 
     var _setGraphWithSearch = function(searchResults){
