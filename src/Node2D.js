@@ -24,6 +24,8 @@
 
 "use strict";
 
+module.exports = Node2D;
+
 /**
  * The node that exists on the 2D graph
  * 
