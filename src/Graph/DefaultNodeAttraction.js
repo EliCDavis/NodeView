@@ -23,41 +23,37 @@
  */
 
 
-var gulp = require('gulp');
-var browserify = require("browserify");
-var source = require("vinyl-source-stream");
-var uglify = require("gulp-uglify");
-var streamify = require("gulp-streamify");
-var graphLocation = "./src/Graph/Graph2D";
+module.exports = function DefaultNodeAttraction(node1, node2, extraData) {
 
-gulp.task('build-all', ['build-unmin', 'build-min']);
+    var data = extraData;
+    if (data === undefined || data === null) {
+        data = {};
+    }
 
-gulp.task('build-unmin', function(){
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.js'))
-        .pipe(gulp.dest('./dist/'));
-});
+    var pos1 = node1.pos;
+    var pos2 = node2.pos;
+    var mass1 = node1.mass;
+    var mass2 = node2.mass;
 
-gulp.task('build-min', function(){
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(streamify(uglify()))
-        .pipe(gulp.dest('./dist/'));
-});
+    var xDist = pos2[0] - pos1[0];
+    var yDist = pos2[1] - pos1[1];
+    var dist = Math.sqrt((xDist * xDist) + (yDist * yDist));
 
-gulp.task('run', function () {
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(streamify(uglify()))
-        .pipe(gulp.dest('./demo/'));
-});
+    // Yeah you know what this is.
+    var masses = Math.abs(mass1 * mass2);
 
-gulp.task('debug', function () {
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(gulp.dest('./demo/'));
-});
+    // Yeah this is physics dude.
+    var attraction = (masses / (dist * dist)) * 1.1;
+
+    // If we're too close then let's reject
+    if (dist < mass1 + mass2) {
+        attraction *= -3.5;
+    }
+
+    if (data["$groupPos"]) {
+        attraction = .05;
+    }
+
+    return attraction;
+
+};

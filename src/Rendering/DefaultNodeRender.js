@@ -23,41 +23,38 @@
  */
 
 
-var gulp = require('gulp');
-var browserify = require("browserify");
-var source = require("vinyl-source-stream");
-var uglify = require("gulp-uglify");
-var streamify = require("gulp-streamify");
-var graphLocation = "./src/Graph/Graph2D";
+module.exports = function (node, nodeCanvasPos, graph) {
 
-gulp.task('build-all', ['build-unmin', 'build-min']);
+    var ctx = graph.getContext();
+    ctx.fillStyle = node.getRenderData()["color"];
+    ctx.beginPath();
+    ctx.arc(nodeCanvasPos[0],
+            nodeCanvasPos[1],
+            node.getRadius() * graph.getScale() * .8,
+            0,
+            2 * Math.PI);
+    ctx.fill();
 
-gulp.task('build-unmin', function(){
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.js'))
-        .pipe(gulp.dest('./dist/'));
-});
+    if (node.getRenderData()['$mouseOver']) {
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(nodeCanvasPos[0],
+                nodeCanvasPos[1],
+                node.getRadius() * graph.getScale() * .8 * .5,
+                0,
+                2 * Math.PI);
+        ctx.fill();
+    }
 
-gulp.task('build-min', function(){
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(streamify(uglify()))
-        .pipe(gulp.dest('./dist/'));
-});
+    if (node.getRenderData()['$beingDragged']) {
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.arc(nodeCanvasPos[0],
+                nodeCanvasPos[1],
+                node.getRadius() * graph.getScale() * .8 * .3,
+                0,
+                2 * Math.PI);
+        ctx.fill();
+    }
 
-gulp.task('run', function () {
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(streamify(uglify()))
-        .pipe(gulp.dest('./demo/'));
-});
-
-gulp.task('debug', function () {
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(gulp.dest('./demo/'));
-});
+};

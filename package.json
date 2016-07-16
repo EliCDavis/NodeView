@@ -1,6 +1,7 @@
 {
     "name": "NodeView",
     "version": "1.0.0",
+    "main": "Graph/Graph2D",
     "keywords": [
         "util",
         "functional",

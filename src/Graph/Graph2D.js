@@ -27,8 +27,12 @@
 module.exports = Graph2D;
 
 var GraphOptions = require('./GraphOptions');
-var Node2D = require('./Node2D');
-var Util = require('./Util');
+var ApplyGravityOnNodes = require('./ApplyGravityOnNodes');
+var Util = require('../Util');
+var SetupNewNode = require('./SetupNode');
+var GetCanvasSizeOfGraph = require('../Util/GetCanvasSize');
+var SetNodeAsBeingDragged = require('./SetNodeAsBeingDragged');
+var SetNodeNotBeingDragged = require('./SetNodeNotBeingDragged');
 
 Util.init();
 
@@ -106,16 +110,7 @@ function Graph2D(canvas) {
     var _backgroundRenderMethod = null;
 
 
-    var _linkRenderMethod = function (g, startPos, endPos, link) {
-        var ctx = g.getContext();
-
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 5 * g.getScale();
-        ctx.beginPath();
-        ctx.moveTo(startPos[0], startPos[1]);
-        ctx.lineTo(endPos[0], endPos[1]);
-        ctx.stroke();
-    };
+    var _linkRenderMethod = require('../Rendering/DefaultLinkRender');
 
 
     self.nodesAreLinked = function (n1, n2) {
@@ -172,15 +167,7 @@ function Graph2D(canvas) {
     };
 
 
-    var _mouseToGraphCoordinates = function (mouseEvent) {
-
-        var coords = self.getContext().canvas.relMouseCoords(mouseEvent);
-
-        var graphX = (coords.x / _scale) - _xPosition;
-        var graphY = (coords.y / _scale) - _yPosition;
-
-        return {"x": graphX, "y": graphY};
-    };
+    var _mouseToGraphCoordinates = require('../Util/MouseToGraphCoordinates');
 
 
     /**
@@ -197,16 +184,6 @@ function Graph2D(canvas) {
      */
     self.getContext = function () {
         return _canvasContext;
-    };
-
-
-    /**
-     * Returns the size of the canvas element in pixels.
-     * 
-     * @returns {Array}
-     */
-    var _getCanvasSize = function () {
-        return [self.getContext().canvas.width, self.getContext().canvas.height];
     };
 
 
@@ -234,32 +211,6 @@ function Graph2D(canvas) {
      */
     var _lastSeenMousePos = null;
 
-
-    var _setNodeAsBeingDragged = function (node) {
-
-        node.setRenderDataByKey("$beingDragged", true);
-        node.setVelocity(0, 0);
-
-        var links = node.getLinks();
-
-        for (var i = 0; i < links.length; i++) {
-            links[i].node.setRenderDataByKey("$neighborBeingDragged", true);
-        }
-
-    };
-
-
-    var _setNodeAsNotBeingDragged = function (node) {
-
-        node.setRenderDataByKey("$beingDragged", false);
-
-        var links = node.getLinks();
-
-        for (var i = 0; i < links.length; i++) {
-            links[i].node.setRenderDataByKey("$neighborBeingDragged", false);
-        }
-
-    };
 
     var _setNodeAsHovered = function (node) {
 
@@ -297,7 +248,7 @@ function Graph2D(canvas) {
 
             // Update their render status
             if (_itemBeingDraggedOnCanvas["itemType"] === "node") {
-                _setNodeAsNotBeingDragged(_itemBeingDraggedOnCanvas["item"]);
+                SetNodeNotBeingDragged(_itemBeingDraggedOnCanvas["item"]);
             }
 
             _itemBeingDraggedOnCanvas = null;
@@ -308,7 +259,7 @@ function Graph2D(canvas) {
         // Figure out what Node was clicked (if any) and call their onclick function
         _nodes.forEach(function (node) {
 
-            if (_mouseOverNode(node, _mouseToGraphCoordinates(event))) {
+            if (_mouseOverNode(node, _mouseToGraphCoordinates(event, self))) {
                 node.onclick(node);
             }
 
@@ -334,7 +285,7 @@ function Graph2D(canvas) {
 
         _lastSeenMousePos = event;
 
-        var coords = _mouseToGraphCoordinates(event);
+        var coords = _mouseToGraphCoordinates(event, self);
 
         _currentMouseState = "hold";
 
@@ -361,7 +312,7 @@ function Graph2D(canvas) {
 
         // Update their render status
         if (_itemBeingDraggedOnCanvas !== null && _itemBeingDraggedOnCanvas["itemType"] === "node") {
-            _setNodeAsNotBeingDragged(_itemBeingDraggedOnCanvas["item"]);
+            SetNodeNotBeingDragged(_itemBeingDraggedOnCanvas["item"]);
             _setNodeAsNotHovered(_itemBeingDraggedOnCanvas["item"]);
         }
 
@@ -385,8 +336,7 @@ function Graph2D(canvas) {
 
             // Update their render status
             if (_itemBeingDraggedOnCanvas["itemType"] === "node") {
-                _setNodeAsBeingDragged(_itemBeingDraggedOnCanvas["item"]);
-                //_itemBeingDraggedOnCanvas["item"].setRenderDataByKey("$beingDragged", true);
+                SetNodeAsBeingDragged(_itemBeingDraggedOnCanvas["item"]);
             }
 
         }
@@ -398,7 +348,7 @@ function Graph2D(canvas) {
 
             if (_itemBeingDraggedOnCanvas["itemType"] === "node") {
 
-                var coords = _mouseToGraphCoordinates(event);
+                var coords = _mouseToGraphCoordinates(event, self);
 
                 _itemBeingDraggedOnCanvas["item"].setPosition(coords.x + (orgPos[0] - orgMousePos[0]), coords.y + (orgPos[1] - orgMousePos[1]));
 
@@ -439,7 +389,7 @@ function Graph2D(canvas) {
 
         newScale += direction * newScale;
 
-        var canvasSize = _getCanvasSize();
+        var canvasSize = GetCanvasSizeOfGraph(self);
 
         var oldCenter = [canvasSize[0] * (1 / _scale) * 0.5, canvasSize[1] * (1 / _scale) * 0.5];
         var newCenter = [canvasSize[0] * (1 / newScale) * 0.5, canvasSize[1] * (1 / newScale) * 0.5];
@@ -529,9 +479,11 @@ function Graph2D(canvas) {
         _nodeLinks = [];
     };
 
+
     self.clearNodes = function(){
         _nodes = [];
     };
+
 
     self.getNodeClosestToPoint = function (point) {
 
@@ -560,6 +512,7 @@ function Graph2D(canvas) {
     };
 
     /**
+     * Set's the current position of the graph
      * 
      * @param {type} x
      * @param {type} y
@@ -592,55 +545,15 @@ function Graph2D(canvas) {
     };
 
 
-    // TODO: Optimize
-    var _spaceFree = function (p, radius) {
-
-        for (var i = 0; i < _nodes.length; i++) {
-            var np = _nodes[i].getPosition();
-
-            var distance = Math.sqrt(Math.pow(np[0] - p[0], 2) +
-                    Math.pow(np[1] - p[1], 2));
-
-            if (distance < radius) {
-                return false;
-            }
-        }
-
-        return true;
-
-    };
-
-
-    var _nodesCenter = function (nodesToAverage) {
-
-        // Average and find center of all nodes
-        var averageCenter = [0, 0];
-
-        var total = [0, 0];
-
-        // Total up all the positions
-        nodesToAverage.forEach(function (node) {
-            total[0] += node.getPosition()[0];
-            total[1] += node.getPosition()[1];
-        });
-
-        // Average the total to get center
-        averageCenter[0] = total[0] / nodesToAverage.length;
-        averageCenter[1] = total[1] / nodesToAverage.length;
-
-        return averageCenter;
-    };
-
-
     var _scaleToBounds = function(bounds){
         
         var desiredScale = _scale;
         
-        if(_getCanvasSize()[0] < _getCanvasSize()[1]){
+        if(GetCanvasSizeOfGraph(self)[0] < GetCanvasSizeOfGraph(self)[1]){
             
             // Scale by width
             var desiredWidth = bounds[2];
-            var currentUnscaledWidth = _getCanvasSize()[0];
+            var currentUnscaledWidth = GetCanvasSizeOfGraph(self)[0];
             
             desiredScale = currentUnscaledWidth/desiredWidth;
             
@@ -648,7 +561,7 @@ function Graph2D(canvas) {
 
             // Scale by height
             var desiredHeight = bounds[3];
-            var currentUnscaledHeight = _getCanvasSize()[1];
+            var currentUnscaledHeight = GetCanvasSizeOfGraph(self)[1];
             
             desiredScale = currentUnscaledHeight/desiredHeight;
         }
@@ -659,180 +572,10 @@ function Graph2D(canvas) {
         
     };
 
+
+    self.getBoundsFromNodes = require('./GetBoundsFromNodes');
+
     
-    var _nodeFitsInBounds = function(node, bounds) {
-        
-        for(var i = 0; i < bounds.length; i ++){
-            if(bounds[i] === null){
-                return false;
-            }
-        }
-        
-        var xPos = node.getPosition()[0];
-        var yPos = node.getPosition()[1];
-        var r = node.getRadius();
-        
-        if(bounds[0] > xPos-r){
-            return false;
-        }
-        
-        if(bounds[0]+bounds[2] < xPos+r){
-            return false;
-        }
-        
-        if(bounds[1] > yPos-r){
-            return false;
-        }
-        
-        if(bounds[1]+bounds[3] < yPos+r){
-            return false;
-        }
-        
-        return true;
-        
-    };
-
-
-    var _extendBoundsForNode = function(node, bounds){
-        
-        if(_nodeFitsInBounds(node, bounds)){
-            return bounds;
-        }
-        
-        for(var i = 0; i < bounds.length; i ++){
-            if(bounds[i] === null){
-                var r = node.getRadius();
-                return [
-                    node.getPosition()[0]-(r/2),
-                    node.getPosition()[1]-(r/2),
-                    r,
-                    r
-                ];
-            }
-        }
-        
-        var xPos = node.getPosition()[0];
-        var yPos = node.getPosition()[1];
-        var r = node.getRadius();
-        
-        if(bounds[0] > xPos-r){
-            var newBound = xPos-r;
-            bounds[2] += Math.abs(bounds[0] - newBound);
-            bounds[0] = newBound;
-        }
-        
-        if(bounds[0]+bounds[2] < xPos+r){
-            bounds[2] = xPos+r-bounds[0];
-        }
-        
-        if(bounds[1] > yPos-r){
-            bounds[3] += Math.abs(yPos-r - bounds[1]);
-            bounds[1] = yPos-r;
-        }
-        
-        if(bounds[1]+bounds[3] < yPos+r){
-            bounds[3] = yPos+r-bounds[1];
-        }
-        
-        return bounds;
-    };
-    
-    self.getBoundsFromNodes = function(nodes){
-        
-        var curBounds = [null,null,null,null];
-    
-        nodes.forEach(function(node) {
-            curBounds = _extendBoundsForNode(node, curBounds);
-        });
-        
-        return curBounds;
-        
-    };
-
-
-    /**
-     * Returns x and y coordinates that are atleast as far away as the radius
-     * from all other nodes on the graph.
-     * 
-     * @param {Number} radius how much space you'd like between all the points
-     * @returns {Array} [x, y] in graph (not canvas) coordinates
-     */
-    var _getFreeSpace = function (radius) {
-
-        if (_nodes.length === 0) {
-            var graphSize = _getCanvasSize();
-            var centerPos = [graphSize[0] / 2, graphSize[1] / 2];
-            return [centerPos[0] * (1 / _scale), centerPos[1] * (1 / _scale)];
-        }
-
-        var averageCenter = _nodesCenter(_nodes);
-
-        // Generate a grid extending out from center with cells 1/4 size of radius
-        var stepSize = radius / 4;
-        var curStep = 0;
-
-        while (curStep < 10000) { // Dear god what am I doing.
-
-            // Conceptually we're extending outwards in a grid fasion
-            // until we find a free grid space from the center
-            //       _ _ _ _ _   _
-            //      |_|_|_|_|_| 4 |
-            //    4 |_|     |_| 3 |__ Size of wall is 4
-            //    3 |_|  X  |_| 2 |   For a 5x5 grid.
-            //    2 |_|_ _ _|_| 1_|
-            //    1 |_|_|_|_|_|
-            //         1 2 3 4
-            var sizeOfWall = (curStep * 2);
-            if (curStep === 0) {
-                sizeOfWall = 1;
-            }
-
-            // Create the sides of the wall
-            var leftSide = [];
-            var rightSide = [];
-            var bottomSide = [];
-            var topSide = [];
-
-            // Get the offset from the center
-            var offset = (curStep + .5) * stepSize;
-
-            // Get the different starting positions due to offset
-            // (Four corners of square)
-            var bottomLeft = [averageCenter[0] - offset, averageCenter[1] - offset];
-            var bottomRight = [averageCenter[0] + offset, averageCenter[1] - offset];
-            var topLeft = [averageCenter[0] - offset, averageCenter[1] + offset];
-            var topRight = [averageCenter[0] + offset, averageCenter[1] + offset];
-
-            // Add all the potential spaces
-            for (var i = 0; i < sizeOfWall; i++) {
-                leftSide.push([bottomLeft[0], bottomLeft[1] + (stepSize * i)]);
-                rightSide.push([topRight[0], topRight[1] - (stepSize * i)]);
-                bottomSide.push([bottomRight[0] - (stepSize * i), bottomRight[1]]);
-                topSide.push([topLeft[0] + (stepSize * i), topLeft[1]]);
-            }
-
-            var potentialSpaces = leftSide
-                    .concat(rightSide)
-                    .concat(bottomSide)
-                    .concat(topSide);
-
-            for (var i = 0; i < potentialSpaces.length; i++) {
-                if (_spaceFree(potentialSpaces[i], radius)) {
-                    return potentialSpaces[i];
-                }
-            }
-
-            curStep++;
-
-        }
-
-        console.log("Failure to find place! Sorry dude.");
-
-        return [0, 0];
-
-    };
-
-
     /**
      * The default node rendering function assigned to all nodes upon creation
      * 
@@ -843,41 +586,7 @@ function Graph2D(canvas) {
      * @param {Graph2D} graph The graph that the node is apart of
      * @returns {undefined}
      */
-    var _defaultNodeRender = function (node, nodeCanvasPos, graph) {
-
-        var ctx = graph.getContext();
-        ctx.fillStyle = node.getRenderData()["color"];
-        ctx.beginPath();
-        ctx.arc(nodeCanvasPos[0], 
-                nodeCanvasPos[1], 
-                node.getRadius()*graph.getScale()*.8, 
-                0, 
-                2 * Math.PI);
-        ctx.fill();
-        
-        if(node.getRenderData()['$mouseOver']){
-            ctx.fillStyle = "black";
-            ctx.beginPath();
-            ctx.arc(nodeCanvasPos[0],
-                    nodeCanvasPos[1],
-                    node.getRadius() * graph.getScale() * .8*.5,
-                    0,
-                    2 * Math.PI);
-            ctx.fill();
-        }
-        
-        if (node.getRenderData()['$beingDragged']) {
-            ctx.fillStyle = "white";
-            ctx.beginPath();
-            ctx.arc(nodeCanvasPos[0],
-                    nodeCanvasPos[1],
-                    node.getRadius() * graph.getScale() * .8*.3,
-                    0,
-                    2 * Math.PI);
-            ctx.fill();
-        }
-
-    };
+    var _defaultNodeRender = require('../Rendering/DefaultNodeRender');
 
 
     /**
@@ -934,33 +643,7 @@ function Graph2D(canvas) {
      */
     self.createNode = function (options) {
 
-        var node = new Node2D();
-
-        if (options && options.renderData) {
-            Object.keys(options.renderData).forEach(function (key, index) {
-                node.setRenderDataByKey(key, options.renderData[key]);
-            });
-        } else {
-            node.setRenderDataByKey('color', '#000000');
-        }
-
-        var setRadius = 70;
-
-        if (options && options.radius) {
-            setRadius = options.radius;
-        }
-
-        node.setRadius(setRadius);
-
-        if (options && options.position) {
-            node.setPosition(options.position);
-        } else {
-            if (options && options.freeSpace) {
-                node.setPosition(_getFreeSpace(options.freeSpace));
-            } else {
-                node.setPosition(_getFreeSpace(setRadius*4));
-            }
-        }
+        var node = SetupNewNode(options, self);
 
         _nodes.push(node);
 
@@ -1068,73 +751,9 @@ function Graph2D(canvas) {
      * @param {type} extraData
      * @returns {Number}
      */
-    var _nodeAttraction = function (node1, node2, extraData) {
+    var _nodeAttraction = require('./DefaultNodeAttraction'); 
 
-        var data = extraData;
-        if (data === undefined || data === null) {
-            data = {};
-        }
-
-        var pos1 = node1.pos;
-        var pos2 = node2.pos;
-        var mass1 = node1.mass;
-        var mass2 = node2.mass;
-
-        var xDist = pos2[0] - pos1[0];
-        var yDist = pos2[1] - pos1[1];
-        var dist = Math.sqrt((xDist * xDist) + (yDist * yDist));
-
-        // Yeah you know what this is.
-        var masses = Math.abs(mass1 * mass2);
-
-        // Yeah this is physics dude.
-        var attraction = (masses / (dist * dist)) * 1.1;
-
-        // If we're too close then let's reject
-        if (dist < mass1 + mass2) {
-            attraction *= -3.5;
-        }
-
-        if (data["$groupPos"]) {
-            attraction = .05;
-        }
-
-        return attraction;
-
-    };
-
-
-    var _getGravitationalPull = function (node1, node2, extraData) {
-
-        var pos1 = node1.pos;
-        var pos2 = node2.pos;
-
-        var xDist = pos2[0] - pos1[0];
-        var yDist = pos2[1] - pos1[1];
-        var dist = Math.sqrt((xDist * xDist) + (yDist * yDist));
-
-        if (dist === 0) {
-            return [0, 0];
-        }
-
-        var attraction = _nodeAttraction(node1, node2, extraData);
-
-        // Get the angle so we can apply the fource properly in x and y
-        var angle = Math.atan(yDist / xDist);
-
-        // ¯\_(ツ)_/¯
-        var direction = 1;
-        if (xDist < 0) {
-            direction = -1;
-        }
-
-        // Add to the acceleration.
-        return [Math.cos(angle) * attraction * direction,
-            Math.sin(angle) * attraction * direction];
-
-    };
-
-
+    
     /**
      * An array of function calls that will be called and then cleared
      * at the end of the frame render
@@ -1174,7 +793,7 @@ function Graph2D(canvas) {
         _scaleToBounds(bounds);
 
         var average = [bounds[0]+(bounds[2]/2), bounds[1]+(bounds[3]/2)];
-        var canvasSize = _getCanvasSize();
+        var canvasSize = GetCanvasSizeOfGraph(self);
 
         var desiredPos = [(canvasSize[0] / _scale / 2) - average[0],
                           (canvasSize[1] / _scale / 2) - average[1]];
@@ -1187,68 +806,10 @@ function Graph2D(canvas) {
     };
 
 
-    var _applyGravityToNodes = function (nodesToApply) {
-
-        nodesToApply.forEach(function (n) {
-
-            // Apply acceleration to the node based on realtive position to 
-            // center and other nodes.
-            var totalAcceleration = [0, 0];
-            nodesToApply.forEach(function (oN) {
-
-                var gavitationData = {};
-
-                if (n.isLinkedWith(oN)) {
-                    gavitationData.$linkData = n.getLinkData(oN);
-                }
-
-                var pull = _getGravitationalPull(
-                        {
-                            "pos": n.getPosition(),
-                            "mass": n.getRadius(),
-                            "node": n
-                        },
-                        {
-                            "pos": oN.getPosition(),
-                            "mass": oN.getRadius(),
-                            "node": oN
-                        },
-                        gavitationData
-                        );
-
-                // Add to the acceleration.
-                totalAcceleration[0] += pull[0];
-                totalAcceleration[1] += pull[1];
-
-            });
-
-            var pull = _getGravitationalPull(
-                    {
-                        "pos": n.getPosition(),
-                        "mass": n.getRadius(),
-                        "node": n
-                    },
-                    {
-                        "pos": [0, 0],
-                        "mass": n.getRadius() * 2,
-                        "group": true
-                    },
-                    {
-                        "$groupPos": true
-                    });
-
-            totalAcceleration[0] += pull[0] * 5;
-            totalAcceleration[1] += pull[1] * 5;
-
-            n.accelerate(totalAcceleration[0], totalAcceleration[1]);
-
-        });
-
-    };
 
     var _mouseHoverCheck = function (n) {
         // Check if the mouse is over the node
-        if (_mouseOverNode(n, _mouseToGraphCoordinates(_lastSeenMousePos))) {
+        if (_mouseOverNode(n, _mouseToGraphCoordinates(_lastSeenMousePos, self))) {
             if (!n.getRenderData().$mouseOver) {
                 _setNodeAsHovered(n);
             }
@@ -1329,7 +890,7 @@ function Graph2D(canvas) {
 
 
         if (_graphOptions.applyGravity()) {
-            _applyGravityToNodes(_nodes);
+            ApplyGravityOnNodes(_nodes, _nodeAttraction);
         }
 
 

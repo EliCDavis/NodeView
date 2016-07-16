@@ -23,41 +23,21 @@
  */
 
 
-var gulp = require('gulp');
-var browserify = require("browserify");
-var source = require("vinyl-source-stream");
-var uglify = require("gulp-uglify");
-var streamify = require("gulp-streamify");
-var graphLocation = "./src/Graph/Graph2D";
+module.exports = function NodeCenter(nodesToAverage) {
+    // Average and find center of all nodes
+    var averageCenter = [0, 0];
 
-gulp.task('build-all', ['build-unmin', 'build-min']);
+    var total = [0, 0];
 
-gulp.task('build-unmin', function(){
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.js'))
-        .pipe(gulp.dest('./dist/'));
-});
+    // Total up all the positions
+    nodesToAverage.forEach(function (node) {
+        total[0] += node.getPosition()[0];
+        total[1] += node.getPosition()[1];
+    });
 
-gulp.task('build-min', function(){
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(streamify(uglify()))
-        .pipe(gulp.dest('./dist/'));
-});
+    // Average the total to get center
+    averageCenter[0] = total[0] / nodesToAverage.length;
+    averageCenter[1] = total[1] / nodesToAverage.length;
 
-gulp.task('run', function () {
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(streamify(uglify()))
-        .pipe(gulp.dest('./demo/'));
-});
-
-gulp.task('debug', function () {
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(gulp.dest('./demo/'));
-});
+    return averageCenter;
+};

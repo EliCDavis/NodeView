@@ -22,42 +22,12 @@
  * THE SOFTWARE.
  */
 
-
-var gulp = require('gulp');
-var browserify = require("browserify");
-var source = require("vinyl-source-stream");
-var uglify = require("gulp-uglify");
-var streamify = require("gulp-streamify");
-var graphLocation = "./src/Graph/Graph2D";
-
-gulp.task('build-all', ['build-unmin', 'build-min']);
-
-gulp.task('build-unmin', function(){
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.js'))
-        .pipe(gulp.dest('./dist/'));
-});
-
-gulp.task('build-min', function(){
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(streamify(uglify()))
-        .pipe(gulp.dest('./dist/'));
-});
-
-gulp.task('run', function () {
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(streamify(uglify()))
-        .pipe(gulp.dest('./demo/'));
-});
-
-gulp.task('debug', function () {
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(gulp.dest('./demo/'));
-});
+/**
+ * Returns the size of the canvas element in pixels.
+ * 
+ * @param {Graph2D} graph the graph that we're looking at the canvas of
+ * @returns {Array}
+ */
+module.exports = function (graph) {
+    return [graph.getContext().canvas.width, graph.getContext().canvas.height];
+};

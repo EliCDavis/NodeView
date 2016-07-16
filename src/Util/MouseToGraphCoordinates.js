@@ -23,41 +23,15 @@
  */
 
 
-var gulp = require('gulp');
-var browserify = require("browserify");
-var source = require("vinyl-source-stream");
-var uglify = require("gulp-uglify");
-var streamify = require("gulp-streamify");
-var graphLocation = "./src/Graph/Graph2D";
+module.exports = function (mouseEvent, graph) {
 
-gulp.task('build-all', ['build-unmin', 'build-min']);
+    var coords = graph.getContext().canvas.relMouseCoords(mouseEvent);
 
-gulp.task('build-unmin', function(){
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.js'))
-        .pipe(gulp.dest('./dist/'));
-});
+    var scale = graph.getScale();
+    var pos = graph.getPosition();
 
-gulp.task('build-min', function(){
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(streamify(uglify()))
-        .pipe(gulp.dest('./dist/'));
-});
+    var graphX = (coords.x / scale) - pos[0];
+    var graphY = (coords.y / scale) - pos[1];
 
-gulp.task('run', function () {
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(streamify(uglify()))
-        .pipe(gulp.dest('./demo/'));
-});
-
-gulp.task('debug', function () {
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(gulp.dest('./demo/'));
-});
+    return {"x": graphX, "y": graphY};
+};

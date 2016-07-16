@@ -23,41 +23,39 @@
  */
 
 
-var gulp = require('gulp');
-var browserify = require("browserify");
-var source = require("vinyl-source-stream");
-var uglify = require("gulp-uglify");
-var streamify = require("gulp-streamify");
-var graphLocation = "./src/Graph/Graph2D";
+var Node2D = require('../Node2D');
+var GetFreeSpaceForNode = require('./GetFreeSpace');
 
-gulp.task('build-all', ['build-unmin', 'build-min']);
+module.exports = function SetupNode(options, graph) {
+    
+    var node = new Node2D();
+    
+    if (options && options.renderData) {
+        Object.keys(options.renderData).forEach(function (key, index) {
+            node.setRenderDataByKey(key, options.renderData[key]);
+        });
+    } else {
+        node.setRenderDataByKey('color', '#000000');
+    }
 
-gulp.task('build-unmin', function(){
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.js'))
-        .pipe(gulp.dest('./dist/'));
-});
+    var setRadius = 70;
 
-gulp.task('build-min', function(){
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(streamify(uglify()))
-        .pipe(gulp.dest('./dist/'));
-});
+    if (options && options.radius) {
+        setRadius = options.radius;
+    }
 
-gulp.task('run', function () {
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(streamify(uglify()))
-        .pipe(gulp.dest('./demo/'));
-});
+    node.setRadius(setRadius);
 
-gulp.task('debug', function () {
-    browserify(graphLocation, {standalone: "Graph2D"})
-        .bundle()
-        .pipe(source('nodeview.min.js'))
-        .pipe(gulp.dest('./demo/'));
-});
+    if (options && options.position) {
+        node.setPosition(options.position);
+    } else {
+        if (options && options.freeSpace) {
+            node.setPosition(GetFreeSpaceForNode(options.freeSpace, graph));
+        } else {
+            node.setPosition(GetFreeSpaceForNode(setRadius * 4, graph));
+        }
+    }
+    
+    return node;
+    
+};
