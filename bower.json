@@ -1,0 +1,24 @@
+{
+  "name": "nodeview",
+  "description": "A node rendering library that utilize's HTML5's canvas to allow developers to have full control how they want their data represented without having to worry about the boring parts of the rendering process.",
+  "main": "dist/nodeview.js",
+  "authors": [
+    "eli.davis1995@gmail.com"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "node",
+    "graph",
+    "canvas",
+    "render",
+    "browser"
+  ],
+  "homepage": "https://github.com/EliCDavis/NodeView",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
