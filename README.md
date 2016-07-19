@@ -6,6 +6,16 @@ without having to worry about the boring part of the rendering process.
 ## Install
 Grab the latest version from the [dest/](https://github.com/EliCDavis/NodeView/tree/master/dist) directory.
 
+### Bower
+Nodeview can be installed via bower using:
+```
+bower install nodeview
+```
+Then in your code just reference it using:
+```HTML
+<script src="bower_components/nodeview/dist/nodeview.js"></script>
+```
+
 ## Build And Development Setup
 After cloning the repository you first need to run
 ```
