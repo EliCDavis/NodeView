@@ -1,12 +1,13 @@
 {
     "name": "NodeView",
-    "version": "1.0.0",
-    "main": "Graph/Graph2D",
+    "description": "A node rendering library that utilizes the canvas for developers to have full control on how their data is represented without the stress.",
+    "version": "0.1.0",
+    "main": "src/Graph/Graph2D",
     "keywords": [
-        "util",
-        "functional",
-        "server",
-        "client",
+        "node",
+        "graph",
+        "canvas",
+        "render",
         "browser"
     ],
     "author": "Eli Davis",

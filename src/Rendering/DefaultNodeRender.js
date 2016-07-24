@@ -25,8 +25,10 @@
 
 module.exports = function (node, nodeCanvasPos, graph) {
 
+    var mainColor = node.getRenderData()["color"];
+
     var ctx = graph.getContext();
-    ctx.fillStyle = node.getRenderData()["color"];
+    ctx.fillStyle = mainColor;
     ctx.beginPath();
     ctx.arc(nodeCanvasPos[0],
             nodeCanvasPos[1],
@@ -55,6 +57,36 @@ module.exports = function (node, nodeCanvasPos, graph) {
                 0,
                 2 * Math.PI);
         ctx.fill();
+    }
+
+    if (node.getRenderData().$mouseOver || node.getRenderData().$neighborMouseOver) {
+
+        // Make sure the mouse over box is always on top of everything.
+        graph.postRender(function () {
+
+            ctx.font = "16px Monospace";
+            var textDimensions = ctx.measureText(node.getRenderData()["name"]);
+
+            // Draw a rectangle for text.
+            ctx.fillStyle = mainColor;
+            ctx.lineWidth = 2;
+            ctx.fillRect(nodeCanvasPos[0] - 70 - textDimensions.width,
+                    nodeCanvasPos[1] - 95 - 20,
+                    textDimensions.width + 40, 40);
+
+            // Draw a line coming from the node to the rectangle
+            ctx.strokeStyle = mainColor;
+            ctx.beginPath();
+            ctx.moveTo(nodeCanvasPos[0], nodeCanvasPos[1]);
+            ctx.lineTo(nodeCanvasPos[0], nodeCanvasPos[1] - 95);
+            ctx.lineTo(nodeCanvasPos[0] - 50, nodeCanvasPos[1] - 95);
+            ctx.stroke();
+
+            // display the text
+            ctx.fillStyle = "black";
+            ctx.fillText(node.getRenderData()["name"], nodeCanvasPos[0] - 50 - textDimensions.width, nodeCanvasPos[1] - 95);
+
+        });
     }
 
 };

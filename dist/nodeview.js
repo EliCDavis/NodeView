@@ -426,7 +426,7 @@ function spaceFree(nodes, p, radius) {
 
 }
 
-},{"../Util/GetCanvasSize":15,"./GetNodeCenter":5}],5:[function(require,module,exports){
+},{"../Util/GetCanvasSize":19,"./GetNodeCenter":5}],5:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -495,6 +495,48 @@ module.exports = function NodeCenter(nodesToAverage) {
  * THE SOFTWARE.
  */
 
+
+module.exports = function NodeClostestToPoint(point, nodes) {
+
+    var closestNode = null;
+    var bestDist = 10000000;
+
+    nodes.forEach(function (node) {
+        var dist = node.distanceFrom(point);
+        if (dist < bestDist) {
+            closestNode = node;
+            bestDist = dist;
+        }
+    });
+
+    return closestNode;
+
+};
+},{}],7:[function(require,module,exports){
+/* 
+ * The MIT License
+ *
+ * Copyright 2016 Eli Davis.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 "use strict";
 
 module.exports = Graph2D;
@@ -504,8 +546,14 @@ var ApplyGravityOnNodes = require('./ApplyGravityOnNodes');
 var Util = require('../Util');
 var SetupNewNode = require('./SetupNode');
 var GetCanvasSizeOfGraph = require('../Util/GetCanvasSize');
+var ScaleForScrollEvent = require('./ScaleForScrollEvent');
+
 var SetNodeAsBeingDragged = require('./SetNodeAsBeingDragged');
 var SetNodeNotBeingDragged = require('./SetNodeNotBeingDragged');
+var SetNodeAsHovered = require('./SetNodeAsHovered');
+var SetNodeAsNotHovered = require('./SetNodeAsNotHovered');
+
+var GetNodeClosestToPoint = require('./GetNodeClosestToPoint');
 
 Util.init();
 
@@ -563,7 +611,7 @@ function Graph2D(canvas) {
     var _graphOptions = new GraphOptions();
     
     self.setOption = function(optionName, value){
-        _graphOptions(optionName, value);
+        _graphOptions.setOption(optionName, value);
     };
 
     /**
@@ -685,34 +733,6 @@ function Graph2D(canvas) {
     var _lastSeenMousePos = null;
 
 
-    var _setNodeAsHovered = function (node) {
-
-        if (node.getRenderData().$mouseOver) {
-            return;
-        }
-
-        node.setRenderDataByKey("$mouseOver", true);
-
-        var links = node.getLinks();
-
-        for (var i = 0; i < links.length; i++) {
-            links[i].node.setRenderDataByKey("$neighborMouseOver", true);
-        }
-
-    };
-
-    var _setNodeAsNotHovered = function (node) {
-
-        node.setRenderDataByKey("$mouseOver", false);
-
-        var links = node.getLinks();
-
-        for (var i = 0; i < links.length; i++) {
-            links[i].node.setRenderDataByKey("$neighborMouseOver", false);
-        }
-
-    };
-
     var _mouseUpCalled = function (event) {
 
         _lastSeenMousePos = event;
@@ -786,7 +806,7 @@ function Graph2D(canvas) {
         // Update their render status
         if (_itemBeingDraggedOnCanvas !== null && _itemBeingDraggedOnCanvas["itemType"] === "node") {
             SetNodeNotBeingDragged(_itemBeingDraggedOnCanvas["item"]);
-            _setNodeAsNotHovered(_itemBeingDraggedOnCanvas["item"]);
+            SetNodeAsNotHovered(_itemBeingDraggedOnCanvas["item"]);
         }
 
         _lastSeenMousePos = null;
@@ -841,42 +861,6 @@ function Graph2D(canvas) {
     };
 
 
-    /**
-     * Called whenever our mouse wheel moves.
-     * Used for keeping up with zoom of the graph.
-     * 
-     * @param {type} event
-     * @returns {undefined}
-     */
-    var _mouseWheelCalled = function (event) {
-
-        var newScale = _scale;
-        var direction = 0;
-
-        // Grab the new scale.
-        if (event.deltaY > 0) {
-            direction = -0.05;
-        } else {
-            direction = 0.05;
-        }
-
-        newScale += direction * newScale;
-
-        var canvasSize = GetCanvasSizeOfGraph(self);
-
-        var oldCenter = [canvasSize[0] * (1 / _scale) * 0.5, canvasSize[1] * (1 / _scale) * 0.5];
-        var newCenter = [canvasSize[0] * (1 / newScale) * 0.5, canvasSize[1] * (1 / newScale) * 0.5];
-
-        var curPos = self.getPosition();
-
-        // Move the position to keep what was in our center in the old scale in the center of our new scale
-        self.setPosition(curPos[0] + (newCenter[0] - oldCenter[0]), curPos[1] + (newCenter[1] - oldCenter[1]));
-
-        _scale = newScale;
-
-    };
-
-
     var _doubleClickCalled = function (event) {
 
     };
@@ -907,7 +891,7 @@ function Graph2D(canvas) {
         });
 
         cvs.addEventListener('mousewheel', function (e) {
-            _mouseWheelCalled(e);
+            ScaleForScrollEvent(e, self);
         });
 
         cvs.addEventListener('dblclick', function (e) {
@@ -917,7 +901,7 @@ function Graph2D(canvas) {
     };
 
 
-    // Only grabe the context if we have a canvas to grab from
+    // Only grab the context if we have a canvas to grab from
     if (canvas !== null && canvas !== undefined) {
         _canvasContext = canvas.getContext("2d");
         _initializeGraph(canvas);
@@ -958,22 +942,27 @@ function Graph2D(canvas) {
     };
 
 
-    self.getNodeClosestToPoint = function (point) {
-
-        var closestNode = null;
-        var bestDist = 10000000;
-
-        _nodes.forEach(function (node) {
-            var dist = node.distanceFrom(point);
-            if (dist < bestDist) {
-                closestNode = node;
-                bestDist = dist;
-            }
-        });
-
-        return closestNode;
-
+    /**
+     * Get's the node who's position closest to the point specified
+     * 
+     * @param {type} point [x,y]
+     * @param {type} nodes Will only look at these nodes when seeing which ones closest to the point.  Defaults to all nodes in graph
+     * @returns {unresolved}
+     */
+    self.getNodeClosestToPoint = function(point, nodes){
+        
+        if(!point){
+            return null;
+        }
+        
+        if(!nodes){
+            return GetNodeClosestToPoint(point, _nodes);
+        }
+        
+        return GetNodeClosestToPoint(point, nodes);
+        
     };
+
 
     /**
      * Returns the center of the canvas in the form of [x, y] 
@@ -983,6 +972,7 @@ function Graph2D(canvas) {
     self.getPosition = function () {
         return [_xPosition, _yPosition];
     };
+
 
     /**
      * Set's the current position of the graph
@@ -1015,6 +1005,16 @@ function Graph2D(canvas) {
      */
     self.getScale = function () {
         return _scale;
+    };
+    
+    
+    self.setScale = function (newScale) {
+        
+        if(typeof newScale !== 'number' || newScale <= 0){
+            return;
+        }
+        
+        _scale = newScale;
     };
 
 
@@ -1071,7 +1071,7 @@ function Graph2D(canvas) {
      * @returns {unresolved}
      */
     var _defaultNodeMouseDetection = function (node, graph, mousePos) {
-       return (node.distanceFrom(mousePos) <= node.getRadius() * .6);
+       return (node.distanceFrom(mousePos) <= node.getRadius() * .8);
     };
 
 
@@ -1255,6 +1255,11 @@ function Graph2D(canvas) {
     };
 
 
+    self.centerOverNodes = function(nodes, duration){
+        
+    };
+
+
     var _centerOnNodes = function () {
 
         if (!_nodes || _nodes.length === 0) {
@@ -1284,11 +1289,11 @@ function Graph2D(canvas) {
         // Check if the mouse is over the node
         if (_mouseOverNode(n, _mouseToGraphCoordinates(_lastSeenMousePos, self))) {
             if (!n.getRenderData().$mouseOver) {
-                _setNodeAsHovered(n);
+                SetNodeAsHovered(n);
             }
         } else {
             if (n.getRenderData().$mouseOver) {
-                _setNodeAsNotHovered(n);
+                SetNodeAsNotHovered(n);
             }
         }
     };
@@ -1425,7 +1430,7 @@ function Graph2D(canvas) {
     _drawFrame();
 
 }
-},{"../Rendering/DefaultLinkRender":12,"../Rendering/DefaultNodeRender":13,"../Util":14,"../Util/GetCanvasSize":15,"../Util/MouseToGraphCoordinates":16,"./ApplyGravityOnNodes":1,"./DefaultNodeAttraction":2,"./GetBoundsFromNodes":3,"./GraphOptions":7,"./SetNodeAsBeingDragged":8,"./SetNodeNotBeingDragged":9,"./SetupNode":10}],7:[function(require,module,exports){
+},{"../Rendering/DefaultLinkRender":16,"../Rendering/DefaultNodeRender":17,"../Util":18,"../Util/GetCanvasSize":19,"../Util/MouseToGraphCoordinates":20,"./ApplyGravityOnNodes":1,"./DefaultNodeAttraction":2,"./GetBoundsFromNodes":3,"./GetNodeClosestToPoint":6,"./GraphOptions":8,"./ScaleForScrollEvent":9,"./SetNodeAsBeingDragged":10,"./SetNodeAsHovered":11,"./SetNodeAsNotHovered":12,"./SetNodeNotBeingDragged":13,"./SetupNode":14}],8:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -1517,7 +1522,61 @@ function GraphOptions() {
         return _options.centerOnNodes.value;
     };
 }
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
+/* 
+ * The MIT License
+ *
+ * Copyright 2016 Eli Davis.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+var GetCanvasSizeOfGraph = require('../Util/GetCanvasSize');
+
+module.exports = function (event, graph) {
+    var _scale = graph.getScale();
+    var newScale = _scale;
+    var direction = 0;
+
+    // Grab the new scale.
+    if (event.deltaY > 0) {
+        direction = -0.05;
+    } else {
+        direction = 0.05;
+    }
+
+    newScale += direction * newScale;
+
+    var canvasSize = GetCanvasSizeOfGraph(graph);
+
+    var oldCenter = [canvasSize[0] * (1 / _scale) * 0.5, canvasSize[1] * (1 / _scale) * 0.5];
+    var newCenter = [canvasSize[0] * (1 / newScale) * 0.5, canvasSize[1] * (1 / newScale) * 0.5];
+
+    var curPos = graph.getPosition();
+
+    // Move the position to keep what was in our center in the old scale in the center of our new scale
+    graph.setPosition(curPos[0] + (newCenter[0] - oldCenter[0]), curPos[1] + (newCenter[1] - oldCenter[1]));
+
+    graph.setScale(newScale);
+};
+
+},{"../Util/GetCanvasSize":19}],10:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -1555,7 +1614,84 @@ module.exports = function SetNodeAsBeingDragged(node) {
     }
 
 };
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
+/* 
+ * The MIT License
+ *
+ * Copyright 2016 Eli Davis.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+
+module.exports = function SetNodeAsHovered(node) {
+
+    if (node.getRenderData().$mouseOver) {
+        return;
+    }
+
+    node.setRenderDataByKey("$mouseOver", true);
+
+    var links = node.getLinks();
+
+    for (var i = 0; i < links.length; i++) {
+        links[i].node.setRenderDataByKey("$neighborMouseOver", true);
+    } 
+};
+},{}],12:[function(require,module,exports){
+/* 
+ * The MIT License
+ *
+ * Copyright 2016 Eli Davis.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+
+module.exports = function SetNodeAsNotHovered(node) {
+
+    node.setRenderDataByKey("$mouseOver", false);
+
+    var links = node.getLinks();
+
+    for (var i = 0; i < links.length; i++) {
+        links[i].node.setRenderDataByKey("$neighborMouseOver", false);
+    }
+    
+};
+},{}],13:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -1592,7 +1728,7 @@ module.exports = function SetNodeNoteBeingDragged (node) {
     }
 
 };
-},{}],10:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -1654,7 +1790,7 @@ module.exports = function SetupNode(options, graph) {
     return node;
     
 };
-},{"../Node2D":11,"./GetFreeSpace":4}],11:[function(require,module,exports){
+},{"../Node2D":15,"./GetFreeSpace":4}],15:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -2181,7 +2317,7 @@ function Node2D() {
     };
 
 }
-},{}],12:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -2217,7 +2353,7 @@ module.exports = function (g, startPos, endPos, link) {
     ctx.lineTo(endPos[0], endPos[1]);
     ctx.stroke();
 };
-},{}],13:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -2245,8 +2381,10 @@ module.exports = function (g, startPos, endPos, link) {
 
 module.exports = function (node, nodeCanvasPos, graph) {
 
+    var mainColor = node.getRenderData()["color"];
+
     var ctx = graph.getContext();
-    ctx.fillStyle = node.getRenderData()["color"];
+    ctx.fillStyle = mainColor;
     ctx.beginPath();
     ctx.arc(nodeCanvasPos[0],
             nodeCanvasPos[1],
@@ -2277,8 +2415,39 @@ module.exports = function (node, nodeCanvasPos, graph) {
         ctx.fill();
     }
 
+    if (node.getRenderData().$mouseOver || node.getRenderData().$neighborMouseOver) {
+
+        // Make sure the mouse over box is always on top of everything.
+        graph.postRender(function () {
+
+            ctx.font = "16px Monospace";
+            var textDimensions = ctx.measureText(node.getRenderData()["name"]);
+
+            // Draw a rectangle for text.
+            ctx.fillStyle = mainColor;
+            ctx.lineWidth = 2;
+            ctx.fillRect(nodeCanvasPos[0] - 70 - textDimensions.width,
+                    nodeCanvasPos[1] - 95 - 20,
+                    textDimensions.width + 40, 40);
+
+            // Draw a line coming from the node to the rectangle
+            ctx.strokeStyle = mainColor;
+            ctx.beginPath();
+            ctx.moveTo(nodeCanvasPos[0], nodeCanvasPos[1]);
+            ctx.lineTo(nodeCanvasPos[0], nodeCanvasPos[1] - 95);
+            ctx.lineTo(nodeCanvasPos[0] - 50, nodeCanvasPos[1] - 95);
+            ctx.stroke();
+
+            // display the text
+            ctx.fillStyle = "black";
+            ctx.fillText(node.getRenderData()["name"], nodeCanvasPos[0] - 50 - textDimensions.width, nodeCanvasPos[1] - 95);
+
+        });
+    }
+
 };
-},{}],14:[function(require,module,exports){
+
+},{}],18:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -2352,7 +2521,7 @@ module.exports = {
         return !isNaN(parseFloat(n)) && isFinite(n);
     }
 };
-},{}],15:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -2386,7 +2555,7 @@ module.exports = {
 module.exports = function (graph) {
     return [graph.getContext().canvas.width, graph.getContext().canvas.height];
 };
-},{}],16:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -2424,5 +2593,5 @@ module.exports = function (mouseEvent, graph) {
 
     return {"x": graphX, "y": graphY};
 };
-},{}]},{},[6])(6)
+},{}]},{},[7])(7)
 });
