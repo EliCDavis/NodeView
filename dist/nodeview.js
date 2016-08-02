@@ -613,6 +613,9 @@ function Graph2D(canvas) {
     self.setOption = function(optionName, value){
         _graphOptions.setOption(optionName, value);
     };
+    
+    self.nodeDecelerationConstant = _graphOptions.nodeDecelerationConstant;
+    self.maxNodeSpeed = _graphOptions.maxNodeSpeed;
 
     /**
      * Array of objects that represents the linkage of 2 nodes.
@@ -939,6 +942,7 @@ function Graph2D(canvas) {
 
     self.clearNodes = function(){
         _nodes = [];
+        self.clearLinks();
     };
 
 
@@ -1486,6 +1490,16 @@ function GraphOptions() {
         applyTranslation: {
             value: true,
             constructor: Boolean
+        },
+        
+        maxNodeSpeed: {
+            value: 30000,
+            constructor: Number
+        },
+        
+        nodeDecelerationConstant: {
+            value: 2,
+            constructor: Number
         }
     };
     
@@ -1520,6 +1534,14 @@ function GraphOptions() {
     
     self.centerOnNodes = function(){
         return _options.centerOnNodes.value;
+    };
+    
+    self.maxNodeSpeed = function(){
+        return _options.maxNodeSpeed.value;
+    };
+    
+    self.nodeDecelerationConstant = function(){
+        return _options.nodeDecelerationConstant.value;
     };
 }
 },{}],9:[function(require,module,exports){
@@ -1759,7 +1781,7 @@ var GetFreeSpaceForNode = require('./GetFreeSpace');
 
 module.exports = function SetupNode(options, graph) {
     
-    var node = new Node2D();
+    var node = new Node2D(graph);
     
     if (options && options.renderData) {
         Object.keys(options.renderData).forEach(function (key, index) {
@@ -1824,28 +1846,18 @@ module.exports = Node2D;
  * 
  * @returns {Node2D}
  */
-function Node2D() {
+function Node2D(graph) {
 
     var self = this;
 
     // TODO: Create a render mode enum
 
-    /**
-     * The name of the node, how we will refer to it as short hand.
-     * 
-     * @type String
-     */
-    var _name = "Node Name";
+    if(!graph){
+        throw "Error creating Node. A node needs to know what graph it's apart of.";
+        return;
+    }
 
-
-    /**
-     * Whatever data we want to keep up with inside the node for safe
-     * keepings.
-     * 
-     * @type Object
-     */
-    var _data = "Data";
-
+    var _graph = graph;
 
     /**
      * Arbitrary data kept up with for rendering.
@@ -1952,7 +1964,7 @@ function Node2D() {
 
     self.accelerate = function (x, y) {
 
-        var maxSpeed = 30000;
+        var maxSpeed = _graph.maxNodeSpeed();
 
         _velocityVector[0] = Math.max(Math.min(maxSpeed, _velocityVector[0] + x), -maxSpeed);
         _velocityVector[1] = Math.max(Math.min(maxSpeed, _velocityVector[1] + y), -maxSpeed);
@@ -1965,8 +1977,8 @@ function Node2D() {
         var xdir = _velocityVector[0] > 0 ? -1 : 1;
         var ydir = _velocityVector[1] > 0 ? -1 : 1;
 
-        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0])) * deltaTime * xdir * 2;
-        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1])) * deltaTime * ydir * 2;
+        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0])) * deltaTime * xdir * _graph.nodeDecelerationConstant();
+        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1])) * deltaTime * ydir * _graph.nodeDecelerationConstant();
     };
 
 
@@ -2196,17 +2208,6 @@ function Node2D() {
 
         _xPosition = x;
         _yPosition = y;
-    };
-
-
-    /**
-     * For testing at the moment, will eventually be removed
-     * TODO: Remove
-     * 
-     * @returns {String}
-     */
-    self.getContents = function () {
-        return _name + " - " + _data;
     };
 
 

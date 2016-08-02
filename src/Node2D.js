@@ -31,28 +31,18 @@ module.exports = Node2D;
  * 
  * @returns {Node2D}
  */
-function Node2D() {
+function Node2D(graph) {
 
     var self = this;
 
     // TODO: Create a render mode enum
 
-    /**
-     * The name of the node, how we will refer to it as short hand.
-     * 
-     * @type String
-     */
-    var _name = "Node Name";
+    if(!graph){
+        throw "Error creating Node. A node needs to know what graph it's apart of.";
+        return;
+    }
 
-
-    /**
-     * Whatever data we want to keep up with inside the node for safe
-     * keepings.
-     * 
-     * @type Object
-     */
-    var _data = "Data";
-
+    var _graph = graph;
 
     /**
      * Arbitrary data kept up with for rendering.
@@ -159,7 +149,7 @@ function Node2D() {
 
     self.accelerate = function (x, y) {
 
-        var maxSpeed = 30000;
+        var maxSpeed = _graph.maxNodeSpeed();
 
         _velocityVector[0] = Math.max(Math.min(maxSpeed, _velocityVector[0] + x), -maxSpeed);
         _velocityVector[1] = Math.max(Math.min(maxSpeed, _velocityVector[1] + y), -maxSpeed);
@@ -172,8 +162,8 @@ function Node2D() {
         var xdir = _velocityVector[0] > 0 ? -1 : 1;
         var ydir = _velocityVector[1] > 0 ? -1 : 1;
 
-        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0])) * deltaTime * xdir * 2;
-        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1])) * deltaTime * ydir * 2;
+        _velocityVector[0] += Math.sqrt(Math.abs(_velocityVector[0])) * deltaTime * xdir * _graph.nodeDecelerationConstant();
+        _velocityVector[1] += Math.sqrt(Math.abs(_velocityVector[1])) * deltaTime * ydir * _graph.nodeDecelerationConstant();
     };
 
 
@@ -403,17 +393,6 @@ function Node2D() {
 
         _xPosition = x;
         _yPosition = y;
-    };
-
-
-    /**
-     * For testing at the moment, will eventually be removed
-     * TODO: Remove
-     * 
-     * @returns {String}
-     */
-    self.getContents = function () {
-        return _name + " - " + _data;
     };
 
 

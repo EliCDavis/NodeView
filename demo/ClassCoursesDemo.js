@@ -53,6 +53,8 @@
 
     var graph = new Graph2D(document.getElementById("cv"));
 
+    graph.setOption("applyGravity", false);
+
     var colorForCompleted = "#8F993E";
     var colorForAvailable = "#C99700";
     var colorForUncompleted = "#A9431E";

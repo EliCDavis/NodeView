@@ -98,6 +98,9 @@ function Graph2D(canvas) {
     self.setOption = function(optionName, value){
         _graphOptions.setOption(optionName, value);
     };
+    
+    self.nodeDecelerationConstant = _graphOptions.nodeDecelerationConstant;
+    self.maxNodeSpeed = _graphOptions.maxNodeSpeed;
 
     /**
      * Array of objects that represents the linkage of 2 nodes.
@@ -424,6 +427,7 @@ function Graph2D(canvas) {
 
     self.clearNodes = function(){
         _nodes = [];
+        self.clearLinks();
     };
 
 

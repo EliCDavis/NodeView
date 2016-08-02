@@ -107,14 +107,17 @@ graphInstance.setOption(optionName:String, value:Object);
 ```
 
 Options that exhist on the graph include:
-* **centerOnNodes**:*boolean* - If true, the camera will always recenter on the center of all the nodes
-* **applyGravity**:*boolean* - If true, no gravity methods will be applied to accelerate nodes
+* **centerOnNodes**:*boolean* - If true, the camera will always recenter on the center of all the nodes.
+* **applyGravity**:*boolean* - If true, no gravity methods will be applied to accelerate nodes.
 * **applyTranslation**:*boolean* - If true, nodes on the graph will not be moved by any internal velocity.
+* **maxNodeSpeed**:*Number* - How fast a node can move per frame render.
+* **nodeDecelerationConstant**:*Number* - How quickly the node decelerates.
 #### Example:
 ```js
 graphInstance.setOption('centerOnNodes', false);
 ```
 
+[Source Here](https://github.com/EliCDavis/NodeView/blob/master/src/Graph/GraphOptions.js)
 ### Override Node's Gravity
 Sometimes you want certain nodes to be attracted to others.  Any custom graviy behavior requires a new node attraction method to be defined.  **This method must return a single Number.**  The graph will take care of figuring out the correct forces to apply in the x and y direction.
 

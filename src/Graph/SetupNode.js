@@ -28,7 +28,7 @@ var GetFreeSpaceForNode = require('./GetFreeSpace');
 
 module.exports = function SetupNode(options, graph) {
     
-    var node = new Node2D();
+    var node = new Node2D(graph);
     
     if (options && options.renderData) {
         Object.keys(options.renderData).forEach(function (key, index) {

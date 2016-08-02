@@ -53,6 +53,16 @@ function GraphOptions() {
         applyTranslation: {
             value: true,
             constructor: Boolean
+        },
+        
+        maxNodeSpeed: {
+            value: 30000,
+            constructor: Number
+        },
+        
+        nodeDecelerationConstant: {
+            value: 2,
+            constructor: Number
         }
     };
     
@@ -87,5 +97,13 @@ function GraphOptions() {
     
     self.centerOnNodes = function(){
         return _options.centerOnNodes.value;
+    };
+    
+    self.maxNodeSpeed = function(){
+        return _options.maxNodeSpeed.value;
+    };
+    
+    self.nodeDecelerationConstant = function(){
+        return _options.nodeDecelerationConstant.value;
     };
 }
