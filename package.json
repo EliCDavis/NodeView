@@ -1,7 +1,7 @@
 {
   "name": "NodeView",
   "description": "A node rendering library that utilizes the canvas for developers to have full control on how their data is represented without the stress.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "src/Graph/Graph2D",
   "keywords": [
     "node",
