@@ -16,6 +16,16 @@ Then in your code just reference it using:
 <script src="bower_components/nodeview/dist/nodeview.js"></script>
 ```
 
+### NPM
+Or install on NPM
+```
+npm install NodeView
+```
+Then just require it in your code
+```js
+var NodeView = require('NodeView');
+```
+
 ## Build And Development Setup
 After cloning the repository you first need to run
 ```
