@@ -857,7 +857,7 @@ function Graph2D(canvas) {
 
 
         if (_graphOptions.applyGravity()) {
-            ApplyGravityOnNodes(_nodes, _nodeAttraction);
+            ApplyGravityOnNodes(_nodes, _nodeAttraction, _graphOptions.nodeGravityConstant());
         }
 
 

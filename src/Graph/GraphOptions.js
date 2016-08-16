@@ -63,6 +63,14 @@ function GraphOptions() {
         nodeDecelerationConstant: {
             value: 2,
             constructor: Number
+        },
+        /*
+         * The value returned by the gravity function is multiplied by this value
+         * before being applied to the actual node.
+         */
+        nodeGravityConstant: {
+            value: 1,
+            constructor: Number
         }
     };
     
@@ -105,5 +113,9 @@ function GraphOptions() {
     
     self.nodeDecelerationConstant = function(){
         return _options.nodeDecelerationConstant.value;
+    };
+    
+    self.nodeGravityConstant = function (){
+        return _options.nodeGravityConstant.value;
     };
 }

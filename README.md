@@ -122,6 +122,8 @@ Options that exhist on the graph include:
 * **applyTranslation**:*boolean* - If true, nodes on the graph will not be moved by any internal velocity.
 * **maxNodeSpeed**:*Number* - How fast a node can move per frame render.
 * **nodeDecelerationConstant**:*Number* - How quickly the node decelerates.
+* **nodeGravityConstant**:*Number* - A number that is multiplied with the number returned by the gravity function before the force is applied to the node.
+
 #### Example:
 ```js
 graphInstance.setOption('centerOnNodes', false);

@@ -23,7 +23,7 @@
  */
 
 
-module.exports = function (nodesToApply, attractionMethod) {
+module.exports = function (nodesToApply, attractionMethod, gravityConstant) {
 
     nodesToApply.forEach(function (n) {
 
@@ -50,7 +50,7 @@ module.exports = function (nodesToApply, attractionMethod) {
                         "node": oN
                     },
                     gavitationData
-                    );
+                    ) * gravityConstant;
 
             var pull = _getGravitationalPull(
                     n.getPosition(),
@@ -76,7 +76,7 @@ module.exports = function (nodesToApply, attractionMethod) {
                 },
                 {
                     "$groupPos": true
-                });
+                }) * gravityConstant;
 
         var pull = _getGravitationalPull(
                 n.getPosition(),
