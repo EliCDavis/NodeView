@@ -230,8 +230,22 @@ function Node2D(graph) {
 
     /**
      * Method called when the node was clicked on the canvas
+     * 
+     * Users can easily set their own onclick function just by calling:
+     * nodeInstance.onclick = someOtherFunction;
      */
     self.onclick = function () {
+        console.log("Clicked");
+    };
+    
+    
+    /**
+     * Method called when the node was double clicked on the canvas
+     * 
+     * Users can easily set their own onclick function just by calling:
+     * nodeInstance.ondoubleclick = someOtherFunction;
+     */
+    self.ondoubleclick = function () {
         console.log("Clicked");
     };
 

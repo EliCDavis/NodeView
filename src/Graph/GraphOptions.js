@@ -54,12 +54,16 @@ function GraphOptions() {
             value: true,
             constructor: Boolean
         },
-        
+        /*
+         * The max speed a node can travel via graph coordinates
+         */
         maxNodeSpeed: {
             value: 30000,
             constructor: Number
         },
-        
+        /*
+         * How quickly the node will decelerate over time with the absent of forces
+         */
         nodeDecelerationConstant: {
             value: 2,
             constructor: Number

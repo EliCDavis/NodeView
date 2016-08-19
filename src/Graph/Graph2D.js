@@ -351,6 +351,17 @@ function Graph2D(canvas) {
 
     var _doubleClickCalled = function (event) {
 
+        var coords = _mouseToGraphCoordinates(event, self);
+
+        // Figure out what Node was clicked (if any) and call their double click function
+        _nodes.forEach(function (node) {
+
+            if (_mouseOverNode(node, coords)) {
+                node.ondoubleclick(node);
+            }
+
+        });
+
     };
 
 
