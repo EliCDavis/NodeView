@@ -27,6 +27,10 @@ module.exports = function (node, nodeCanvasPos, graph) {
 
     var mainColor = node.getRenderData()["color"];
 
+    if(!mainColor){
+        mainColor = "#777777";
+    }
+
     var ctx = graph.getContext();
     ctx.fillStyle = mainColor;
     ctx.beginPath();

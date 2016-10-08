@@ -109,7 +109,7 @@ graphInstance.linkNodes(node1, node2, {
 });
 ```
 ### Change Graph Option
-The graph has a few different settings for opperation that can be modified by this function.
+The graph has a few different settings for operation that can be modified by this function.
 
 *returns undefined*
 ```js
@@ -130,6 +130,24 @@ graphInstance.setOption('centerOnNodes', false);
 ```
 
 [Source Here](https://github.com/EliCDavis/NodeView/blob/master/src/Graph/GraphOptions.js)
+
+### Destroy Node
+Removes the node from the graph entirely
+
+*returns boolean* - Whether or not the node was successfully removed from the graph
+```js
+graphInstance.destroyNode(node:Node2D);
+```
+
+### Disable / Enable Nodes
+You can disabled a node that has been added to the graph to keep it from being rendered.
+
+*returns boolean* - Whether or not the node was successfully enabled / disabled 
+```js
+graphInstance.enableNode(node:Node2D);
+graphInstance.disableNode(node:Node2D);
+```
+
 ### Override Node's Gravity
 Sometimes you want certain nodes to be attracted to others.  Any custom graviy behavior requires a new node attraction method to be defined.  **This method must return a single Number.**  The graph will take care of figuring out the correct forces to apply in the x and y direction.
 
@@ -274,6 +292,7 @@ graph.setBackgroundRenderMethod(function (graph) {
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 });
 ```
+
 ### Override Link Render
 The graph calls a link render method for each link that exhists.
 

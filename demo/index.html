@@ -76,6 +76,19 @@ THE SOFTWARE.
             a {
                 color: greenyellow;
             }
+            
+            #page-title {
+                font-family: 'Arizonia', cursive;
+                font-size: 300%;
+                color:#F5F5F5; padding: 0%;
+            }
+            
+            #page-subtitle {
+                font-family: 'serif';
+                font-size: 120%;
+                color:#F5F5F5; 
+                padding: 0%;
+            }
 
             @media screen and (min-width: 768px)  {
                 .mobile-show{ max-width: 30%;}
@@ -89,11 +102,11 @@ THE SOFTWARE.
 
         <div class="mobile-show floating-panel">
             <center>
-                <h1 style="font-family: 'Arizonia', cursive; font-size: 300%; color:#F5F5F5; padding: 0%;">
+                <h1 id="page-title">
                     Node View
                 </h1>
 
-                <small style="font-family: 'serif'; font-size: 120%; color:#F5F5F5; padding: 0%;">Go on, touch 'em.</small>
+                <small id="page-subtitle">Go on, touch 'em.</small>
 
                 <br/>
 
@@ -126,6 +139,7 @@ THE SOFTWARE.
                     <button onclick='galaxyDemo()'>Big Bang</button><br/>
                     <button onclick='repoSearchDemo()'>GitHub Repo Search</button><br/>
                     <button onclick='popularRepoDemo()'>Popular GitHub Repositories</button>
+                    <button onclick='recursivePlacementDemo()'>Recursive Placement</button>
                     
                     <br/><br/>
                     <h3>Github</h3>
@@ -173,15 +187,21 @@ THE SOFTWARE.
                 localStorage["demo"] = "popghub";
                 location.reload(false);
             }
+            
+            function recursivePlacementDemo(){
+                localStorage["demo"] = "recursive";
+                location.reload(false);
+            }
 
         </script>
 
-        <script src="nodeview.min.js"></script>
+        <script src="Graph2D.js"></script>
         <script src="libs/clusters.js"></script>
         <script src="UniverseDemo.js"></script>
         <script src="SECourses.js"></script>
         <script src="ClassCoursesDemo.js"></script>
         <script src="GithubSearchDemo.js"></script>
         <script src="PopularRepoDemo.js"></script>
+        <script src="RecursivePlacementDemo.js"></script>
     </body>
 </html>

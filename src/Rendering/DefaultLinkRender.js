@@ -26,8 +26,8 @@
 module.exports = function (g, startPos, endPos, link) {
     var ctx = g.getContext();
 
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 5 * g.getScale();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3 * g.getScale();
     ctx.beginPath();
     ctx.moveTo(startPos[0], startPos[1]);
     ctx.lineTo(endPos[0], endPos[1]);

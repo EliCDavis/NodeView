@@ -87,11 +87,19 @@ function Graph2D(canvas) {
 
 
     /**
-     * An array of nodes that the graph renders
+     * An array of nodes that the graph will render.
+     * Whenever you add a node to the graph it goes in here.
      * 
      * @type Node2D[]
      */
-    var _nodes = [];
+    var _enabledNodes = [];
+    
+    
+    /**
+     * Nodes that have been added to the graph, but are not being rendered
+     */
+    var _disabledNodes = [];
+    
 
     var _graphOptions = new GraphOptions();
     
@@ -238,7 +246,7 @@ function Graph2D(canvas) {
         }
 
         // Figure out what Node was clicked (if any) and call their onclick function
-        _nodes.forEach(function (node) {
+        _enabledNodes.forEach(function (node) {
 
             if (_mouseOverNode(node, _mouseToGraphCoordinates(event, self))) {
                 node.onclick(node);
@@ -271,7 +279,7 @@ function Graph2D(canvas) {
         _currentMouseState = "hold";
 
         // Figure out what Node was clicked (if any) and then begin dragging appropriatlly
-        _nodes.forEach(function (node) {
+        _enabledNodes.forEach(function (node) {
 
             var wasClicked = _mouseOverNode(node, coords);
 
@@ -354,7 +362,7 @@ function Graph2D(canvas) {
         var coords = _mouseToGraphCoordinates(event, self);
 
         // Figure out what Node was clicked (if any) and call their double click function
-        _nodes.forEach(function (node) {
+        _enabledNodes.forEach(function (node) {
 
             if (_mouseOverNode(node, coords)) {
                 node.ondoubleclick(node);
@@ -422,13 +430,13 @@ function Graph2D(canvas) {
 
 
     self.getNodes = function () {
-        return _nodes;
+        return _enabledNodes;
     };
 
 
     self.clearLinks = function () {
 
-        _nodes.forEach(function(node){
+        _enabledNodes.forEach(function(node){
             node.clearLinks();
         });
 
@@ -437,10 +445,81 @@ function Graph2D(canvas) {
 
 
     self.clearNodes = function(){
-        _nodes = [];
+        _enabledNodes = [];
         self.clearLinks();
     };
 
+    /**
+     * Attempts to remove a node from the graph.
+     * 
+     * @param {type} node The node to be removed
+     * @returns {Boolean} whether or not a node was removed
+     */
+    self.destroyNode = function(node){
+        
+        if(!node){
+            return false;
+        }
+        
+        // See if the node is in the enabled list.
+        for(var i = 0; i < _enabledNodes.length; i ++){
+            if(_enabledNodes[i].getId() === node.getId()){
+                _enabledNodes.splice(i, 1);
+                return true;
+            }
+        }
+        
+        // Now make sure it's not in the disabled nodes.
+        for(var i = 0; i < _enabledNodes.length; i ++){
+            if(_enabledNodes[i].getId() === node.getId()){
+                _enabledNodes.splice(i, 1);
+                return true;
+            }
+        }
+        
+        // Guess we couldn't find the node..
+        return false;
+    };
+    
+    
+    /**
+     * 
+     * @param {type} node The node to disable
+     * @returns {Boolean} Whether or not the node was succesfully disabeld
+     */
+    self.disableNode = function(node){
+        
+        if(!node){
+            return false;
+        }
+        
+        for(var i = 0; i < _enabledNodes.length; i ++){
+            if(_enabledNodes[i].getId() === node.getId()){
+                _disabledNodes.push(_enabledNodes[i]);
+                _enabledNodes[i].setEnabled(false);
+                _enabledNodes.splice(i, 1);
+                return true;
+            }
+        }
+        
+        return false;
+    };
+    
+    self.enableNode = function(node){
+        
+        return false;
+        
+        for(var i = 0; i < _disabledNodes.length; i ++){
+            if(_disabledNodes[i].getId() === node.getId()){
+                _enabledNodes.push(_disabledNodes[i]);
+                _disabledNodes[i].setEnabled(true);
+                _disabledNodes.splice(i, 1);
+                return true;
+            }
+        }
+        
+        return false;
+    };
 
     /**
      * Get's the node who's position closest to the point specified
@@ -456,7 +535,7 @@ function Graph2D(canvas) {
         }
         
         if(!nodes){
-            return GetNodeClosestToPoint(point, _nodes);
+            return GetNodeClosestToPoint(point, _enabledNodes);
         }
         
         return GetNodeClosestToPoint(point, nodes);
@@ -618,7 +697,7 @@ function Graph2D(canvas) {
 
         var node = SetupNewNode(options, self);
 
-        _nodes.push(node);
+        _enabledNodes.push(node);
 
         return node;
 
@@ -638,12 +717,12 @@ function Graph2D(canvas) {
     self.linkNodes = function (n1, n2, linkData) {
 
         // Make sure the nodes are not null
-        if (n1 === null || n1 === undefined) {
+        if (!n1) {
             throw "Failure to link! The first node passed in to link was: " + n1;
         }
 
         // Make sure the nodes are not null
-        if (n2 === null || n2 === undefined) {
+        if (!n2) {
             throw "Failure to link! The second node passed in to link was: " + n2;
         }
 
@@ -762,11 +841,11 @@ function Graph2D(canvas) {
 
     var _centerOnNodes = function () {
 
-        if (!_nodes || _nodes.length === 0) {
+        if (!_enabledNodes || _enabledNodes.length === 0) {
             return;
         }
         
-        var bounds = self.getBoundsFromNodes(_nodes);
+        var bounds = self.getBoundsFromNodes(_enabledNodes);
         
         _scaleToBounds(bounds);
 
@@ -828,7 +907,7 @@ function Graph2D(canvas) {
 //                );
 
         // Draw lines to show child parent relationship
-        _nodes.forEach(function (node) {
+        _enabledNodes.forEach(function (node) {
             node.getChildren().forEach(function (link) {
 
                 var ctx = self.getContext();
@@ -845,6 +924,10 @@ function Graph2D(canvas) {
 
         // Draw the lines between nodes to display links
         _nodeLinks.forEach(function (link) {
+
+            if(!link.nodes[0].enabled() || !link.nodes[1].enabled()){
+                return;
+            }
 
             var startPos = [(link.nodes[0].getPosition()[0] + _xPosition) * _scale,
                 (link.nodes[0].getPosition()[1] + _yPosition) * _scale];
@@ -868,12 +951,12 @@ function Graph2D(canvas) {
 
 
         if (_graphOptions.applyGravity()) {
-            ApplyGravityOnNodes(_nodes, _nodeAttraction, _graphOptions.nodeGravityConstant());
+            ApplyGravityOnNodes(_enabledNodes, _nodeAttraction, _graphOptions.nodeGravityConstant());
         }
 
 
         // Draw the nodes them selves
-        _nodes.forEach(function (n) {
+        _enabledNodes.forEach(function (n) {
 
             var moved = false;
             

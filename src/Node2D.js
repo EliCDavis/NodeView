@@ -111,11 +111,27 @@ function Node2D(graph) {
 
 
     /**
-     * The current displacement of the node perframe of animatino
+     * The current displacement of the node perframe of animation
+     * 
      * @type Array
      */
     var _velocityVector = [0, 0];
 
+
+    /**
+     * Whether or not the node is being rendered on the graph.
+     * 
+     * @type Boolean
+     */
+    var _enabled = true;
+    
+    self.enabled = function(){
+        return _enabled;
+    };
+    
+    self.setEnabled = function(isEnabled){
+        _enabled = isEnabled;
+    };
 
     /**
      * @stof 105034

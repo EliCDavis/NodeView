@@ -28,6 +28,10 @@ var browserify = require("browserify");
 var source = require("vinyl-source-stream");
 var uglify = require("gulp-uglify");
 var streamify = require("gulp-streamify");
+var notify = require("gulp-notify");
+var watchify = require('watchify');
+var gutil = require('gulp-util');
+
 var graphLocation = "./src/Graph/Graph2D";
 
 gulp.task('build-all', ['build-unmin', 'build-min']);
@@ -60,4 +64,53 @@ gulp.task('debug', function () {
         .bundle()
         .pipe(source('nodeview.min.js'))
         .pipe(gulp.dest('./demo/'));
+});
+
+
+var scriptsDir = './src/Graph';
+var buildDir = './demo';
+
+function handleErrors() {
+    var args = Array.prototype.slice.call(arguments);
+    notify.onError({
+        title: "Compile Error",
+        message: "<%= error.message %>"
+    }).apply(this, args);
+    this.emit('end'); // Keep gulp from hanging on this task
+}
+
+// Based on: http://blog.avisi.nl/2014/04/25/how-to-keep-a-fast-build-with-browserify-and-reactjs/
+function buildScript(file, watch, minify) {
+    
+    minify = minify || false;
+    
+    var props = {entries: [scriptsDir + '/' + file], debug: true, cache: {}, packageCache: {}, standalone: "Graph2D"};
+    var bundler = watch ? watchify(browserify(props)) : browserify(props);
+    function rebundle() {
+        var stream = bundler.bundle();
+        if(minify){
+            return stream.on('error', handleErrors)
+                .pipe(source(file))
+                .pipe(streamify(uglify()))
+                .pipe(gulp.dest(buildDir + '/'));
+        } else {
+            return stream.on('error', handleErrors)
+                .pipe(source(file))
+                .pipe(gulp.dest(buildDir + '/'));
+        }
+        
+    }
+    bundler.on('update', function () {
+        rebundle();
+        gutil.log('Rebundle...');
+    });
+    return rebundle();
+}
+
+gulp.task('build', function () {
+    return buildScript('Graph2D.js', false, true);
+});
+
+gulp.task('default', ['build'], function () {
+    return buildScript('Graph2D.js', true);
 });
