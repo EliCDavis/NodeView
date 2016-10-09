@@ -507,7 +507,9 @@ function Graph2D(canvas) {
     
     self.enableNode = function(node){
         
-        return false;
+        if(!node){
+            return false;
+        }
         
         for(var i = 0; i < _disabledNodes.length; i ++){
             if(_disabledNodes[i].getId() === node.getId()){
@@ -520,6 +522,14 @@ function Graph2D(canvas) {
         
         return false;
     };
+
+    var BatchPlacement = require('./BatchPlacement');
+
+    var _bufferPlacement = new BatchPlacement(self);
+
+    self.batchCreateNode = _bufferPlacement.createNode;
+    self.batchClear = _bufferPlacement.clear;
+    self.batchFlush = _bufferPlacement.flush;
 
     /**
      * Get's the node who's position closest to the point specified

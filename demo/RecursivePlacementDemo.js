@@ -50,7 +50,7 @@
     graph.setOption('centerOnNodes', false);
 
 
-    var parent = graph.createNode({
+    var parent = graph.batchCreateNode({
         renderData: {
             name: "Parent",
             color: "rgb(134, 15, 164)"
@@ -58,23 +58,33 @@
         radius: 30
     });
 
-    for (var i = 0; i < 8; i++) {
-        var child = graph.createNode({
-            renderData: {
-                name: "Child",
-                color: "rgb(249, 101, 213)"
-            },
-            radius: 30 + (i * 10)
-        });
-
-        graph.linkNodes(parent, child, {
-            $directedTowards: child
-        });
-
-        if (i % 2 == 0) {
-            graph.disableNode(child)
+    var createChildrenRecursively = function (parent, layers) {
+        
+        if(layers <= 0){
+            return;
         }
+        
+        var children = 2 + parseInt(Math.random()*3)
+        
+        for (var i = 0; i < children; i++) {
+            var child = graph.batchCreateNode({
+                renderData: {
+                    name: "Child",
+                    color: "rgb(249, 101, 213)"
+                },
+                radius: 30 + (i * 10)
+            });
 
-    }
+            graph.linkNodes(parent, child, {
+                $directedTowards: child
+            });
+            
+            createChildrenRecursively(child, layers -1);
+        }
+    };
+
+    createChildrenRecursively(parent, 6);
+
+    graph.batchFlush();
 
 })();

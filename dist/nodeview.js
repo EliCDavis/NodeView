@@ -24,7 +24,7 @@
  */
 
 
-module.exports = function (nodesToApply, attractionMethod) {
+module.exports = function (nodesToApply, attractionMethod, gravityConstant) {
 
     nodesToApply.forEach(function (n) {
 
@@ -51,7 +51,7 @@ module.exports = function (nodesToApply, attractionMethod) {
                         "node": oN
                     },
                     gavitationData
-                    );
+                    ) * gravityConstant;
 
             var pull = _getGravitationalPull(
                     n.getPosition(),
@@ -77,7 +77,7 @@ module.exports = function (nodesToApply, attractionMethod) {
                 },
                 {
                     "$groupPos": true
-                });
+                }) * gravityConstant;
 
         var pull = _getGravitationalPull(
                 n.getPosition(),
@@ -144,6 +144,164 @@ function _getGravitationalPull(pos1, pos2, attraction) {
  * THE SOFTWARE.
  */
 
+/**
+ * 
+ * @param {type} graph
+ * @returns {undefined} A Buffer for adding nodes and then mass placing them
+ */
+module.exports = function(graph){
+
+    var self = this;
+    
+    self.graph = graph;
+    
+    var nodesToPlace = [];
+    
+    self.createNode = function(nodeData){
+        nodeData.position = [0, 0];
+        var node = self.graph.createNode(nodeData);
+        nodesToPlace.push(node);
+        graph.disableNode(node);
+        return node;
+    };
+    
+    
+    var _placeNode = function(node, init, pos, startAngle, endAngle, allNodes){
+        
+        node.setPosition(pos);
+    
+        if(allNodes[node.getId()].children.length === 0){
+            return;
+        }
+    
+        var totalRadius = 0;
+        allNodes[node.getId()].children.forEach(function(child){
+            totalRadius += child.getRadius();
+        });
+        
+        var lastPlacement = startAngle;
+        
+        allNodes[node.getId()].children.forEach(function(child){
+            var angle = (endAngle - startAngle) * (child.getRadius() / totalRadius);
+            var diameter = child.getRadius()*2;
+            var displacement = diameter/angle;
+            
+            var x = displacement*Math.cos(lastPlacement + (angle/2)) + init[0];
+            var y = displacement*Math.sin(lastPlacement + (angle/2)) + init[1];
+            
+            _placeNode(child, init, [x,y], lastPlacement, lastPlacement + angle, allNodes);
+            lastPlacement += angle;
+        });
+    
+    };
+    
+    
+    /**
+     * Mass Placement of nodes.
+     * 
+     * @returns {undefined}
+     */
+    self.flush = function(){
+        
+        var start = Date.now();
+        
+        nodeswMeta = {};
+        
+        // A collection of nodes we're not going to try organizing nicely.
+        nodesNotGonnaTry = [];
+        
+        nodesWithNoParents = [];
+        
+        // Build list of nodes, children, and parent
+        nodesToPlace.forEach(function(node){
+
+            var parents = [];
+            var children = [];
+            
+            // determine whether or not the link is a child or parent
+            node.getLinks().forEach(function(link){
+                if(link.linkData.$directedTowards){
+                    if(link.linkData.$directedTowards.getId() === node.getId()){
+                        parents.push(link.linkData.$directedTowards);
+                    } else {
+                        children.push(link.linkData.$directedTowards);
+                    }
+                }
+            });
+            
+            
+            if(parents.length > 1){
+                nodesNotGonnaTry.push(node);
+            } else if(parents.length === 0){
+                nodesWithNoParents.push(node);
+                parents = null;
+            }
+            
+            
+            nodeswMeta[node.getId()] = {
+                node: node,
+                children: children,
+                parent: parents
+            };
+        });
+        
+        
+        // Build a tree recursively...
+        nodesWithNoParents.forEach(function(root){
+            _placeNode(root, [0,0], [0,0], 0, 2*Math.PI, nodeswMeta);
+        });
+       
+        
+        // Finally, render all nodes in the end
+        nodesToPlace.forEach(function(node){
+            self.graph.enableNode(node);
+        });
+        
+        console.log("Took "+(Date.now()-start)+" miliseconds to place "+ nodesToPlace.length +" nodes");
+    };
+    
+    
+    /**
+     * Instead of trying to find positions for this batch we instead discard
+     * all nodes that have been added.
+     * 
+     * @returns {Number} how many nodes where deleted
+     */
+    self.clear = function(){
+        nodesToPlace.forEach(function(node){
+            self.graph.destroyNode(node);
+        });
+        var length = nodesToPlace.length;
+        nodesToPlace = [];
+        return length;
+    };
+    
+};
+},{}],3:[function(require,module,exports){
+/* 
+ * The MIT License
+ *
+ * Copyright 2016 Eli Davis.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 
 module.exports = function DefaultNodeAttraction(node1, node2, extraData) {
 
@@ -179,7 +337,7 @@ module.exports = function DefaultNodeAttraction(node1, node2, extraData) {
     return attraction;
 
 };
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -295,7 +453,7 @@ var _extendBoundsForNode = function (node, bounds) {
 };
 
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -426,7 +584,7 @@ function spaceFree(nodes, p, radius) {
 
 }
 
-},{"../Util/GetCanvasSize":19,"./GetNodeCenter":5}],5:[function(require,module,exports){
+},{"../Util/GetCanvasSize":20,"./GetNodeCenter":6}],6:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -470,7 +628,7 @@ module.exports = function NodeCenter(nodesToAverage) {
 
     return averageCenter;
 };
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -512,7 +670,7 @@ module.exports = function NodeClostestToPoint(point, nodes) {
     return closestNode;
 
 };
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -602,11 +760,19 @@ function Graph2D(canvas) {
 
 
     /**
-     * An array of nodes that the graph renders
+     * An array of nodes that the graph will render.
+     * Whenever you add a node to the graph it goes in here.
      * 
      * @type Node2D[]
      */
-    var _nodes = [];
+    var _enabledNodes = [];
+    
+    
+    /**
+     * Nodes that have been added to the graph, but are not being rendered
+     */
+    var _disabledNodes = [];
+    
 
     var _graphOptions = new GraphOptions();
     
@@ -753,7 +919,7 @@ function Graph2D(canvas) {
         }
 
         // Figure out what Node was clicked (if any) and call their onclick function
-        _nodes.forEach(function (node) {
+        _enabledNodes.forEach(function (node) {
 
             if (_mouseOverNode(node, _mouseToGraphCoordinates(event, self))) {
                 node.onclick(node);
@@ -786,7 +952,7 @@ function Graph2D(canvas) {
         _currentMouseState = "hold";
 
         // Figure out what Node was clicked (if any) and then begin dragging appropriatlly
-        _nodes.forEach(function (node) {
+        _enabledNodes.forEach(function (node) {
 
             var wasClicked = _mouseOverNode(node, coords);
 
@@ -866,6 +1032,17 @@ function Graph2D(canvas) {
 
     var _doubleClickCalled = function (event) {
 
+        var coords = _mouseToGraphCoordinates(event, self);
+
+        // Figure out what Node was clicked (if any) and call their double click function
+        _enabledNodes.forEach(function (node) {
+
+            if (_mouseOverNode(node, coords)) {
+                node.ondoubleclick(node);
+            }
+
+        });
+
     };
 
 
@@ -926,13 +1103,13 @@ function Graph2D(canvas) {
 
 
     self.getNodes = function () {
-        return _nodes;
+        return _enabledNodes;
     };
 
 
     self.clearLinks = function () {
 
-        _nodes.forEach(function(node){
+        _enabledNodes.forEach(function(node){
             node.clearLinks();
         });
 
@@ -941,10 +1118,91 @@ function Graph2D(canvas) {
 
 
     self.clearNodes = function(){
-        _nodes = [];
+        _enabledNodes = [];
         self.clearLinks();
     };
 
+    /**
+     * Attempts to remove a node from the graph.
+     * 
+     * @param {type} node The node to be removed
+     * @returns {Boolean} whether or not a node was removed
+     */
+    self.destroyNode = function(node){
+        
+        if(!node){
+            return false;
+        }
+        
+        // See if the node is in the enabled list.
+        for(var i = 0; i < _enabledNodes.length; i ++){
+            if(_enabledNodes[i].getId() === node.getId()){
+                _enabledNodes.splice(i, 1);
+                return true;
+            }
+        }
+        
+        // Now make sure it's not in the disabled nodes.
+        for(var i = 0; i < _enabledNodes.length; i ++){
+            if(_enabledNodes[i].getId() === node.getId()){
+                _enabledNodes.splice(i, 1);
+                return true;
+            }
+        }
+        
+        // Guess we couldn't find the node..
+        return false;
+    };
+    
+    
+    /**
+     * 
+     * @param {type} node The node to disable
+     * @returns {Boolean} Whether or not the node was succesfully disabeld
+     */
+    self.disableNode = function(node){
+        
+        if(!node){
+            return false;
+        }
+        
+        for(var i = 0; i < _enabledNodes.length; i ++){
+            if(_enabledNodes[i].getId() === node.getId()){
+                _disabledNodes.push(_enabledNodes[i]);
+                _enabledNodes[i].setEnabled(false);
+                _enabledNodes.splice(i, 1);
+                return true;
+            }
+        }
+        
+        return false;
+    };
+    
+    self.enableNode = function(node){
+        
+        if(!node){
+            return false;
+        }
+        
+        for(var i = 0; i < _disabledNodes.length; i ++){
+            if(_disabledNodes[i].getId() === node.getId()){
+                _enabledNodes.push(_disabledNodes[i]);
+                _disabledNodes[i].setEnabled(true);
+                _disabledNodes.splice(i, 1);
+                return true;
+            }
+        }
+        
+        return false;
+    };
+
+    var BatchPlacement = require('./BatchPlacement');
+
+    var _bufferPlacement = new BatchPlacement(self);
+
+    self.batchCreateNode = _bufferPlacement.createNode;
+    self.batchClear = _bufferPlacement.clear;
+    self.batchFlush = _bufferPlacement.flush;
 
     /**
      * Get's the node who's position closest to the point specified
@@ -960,7 +1218,7 @@ function Graph2D(canvas) {
         }
         
         if(!nodes){
-            return GetNodeClosestToPoint(point, _nodes);
+            return GetNodeClosestToPoint(point, _enabledNodes);
         }
         
         return GetNodeClosestToPoint(point, nodes);
@@ -1122,7 +1380,7 @@ function Graph2D(canvas) {
 
         var node = SetupNewNode(options, self);
 
-        _nodes.push(node);
+        _enabledNodes.push(node);
 
         return node;
 
@@ -1142,12 +1400,12 @@ function Graph2D(canvas) {
     self.linkNodes = function (n1, n2, linkData) {
 
         // Make sure the nodes are not null
-        if (n1 === null || n1 === undefined) {
+        if (!n1) {
             throw "Failure to link! The first node passed in to link was: " + n1;
         }
 
         // Make sure the nodes are not null
-        if (n2 === null || n2 === undefined) {
+        if (!n2) {
             throw "Failure to link! The second node passed in to link was: " + n2;
         }
 
@@ -1266,11 +1524,11 @@ function Graph2D(canvas) {
 
     var _centerOnNodes = function () {
 
-        if (!_nodes || _nodes.length === 0) {
+        if (!_enabledNodes || _enabledNodes.length === 0) {
             return;
         }
         
-        var bounds = self.getBoundsFromNodes(_nodes);
+        var bounds = self.getBoundsFromNodes(_enabledNodes);
         
         _scaleToBounds(bounds);
 
@@ -1332,7 +1590,7 @@ function Graph2D(canvas) {
 //                );
 
         // Draw lines to show child parent relationship
-        _nodes.forEach(function (node) {
+        _enabledNodes.forEach(function (node) {
             node.getChildren().forEach(function (link) {
 
                 var ctx = self.getContext();
@@ -1349,6 +1607,10 @@ function Graph2D(canvas) {
 
         // Draw the lines between nodes to display links
         _nodeLinks.forEach(function (link) {
+
+            if(!link.nodes[0].enabled() || !link.nodes[1].enabled()){
+                return;
+            }
 
             var startPos = [(link.nodes[0].getPosition()[0] + _xPosition) * _scale,
                 (link.nodes[0].getPosition()[1] + _yPosition) * _scale];
@@ -1372,12 +1634,12 @@ function Graph2D(canvas) {
 
 
         if (_graphOptions.applyGravity()) {
-            ApplyGravityOnNodes(_nodes, _nodeAttraction);
+            ApplyGravityOnNodes(_enabledNodes, _nodeAttraction, _graphOptions.nodeGravityConstant());
         }
 
 
         // Draw the nodes them selves
-        _nodes.forEach(function (n) {
+        _enabledNodes.forEach(function (n) {
 
             var moved = false;
             
@@ -1434,7 +1696,7 @@ function Graph2D(canvas) {
     _drawFrame();
 
 }
-},{"../Rendering/DefaultLinkRender":16,"../Rendering/DefaultNodeRender":17,"../Util":18,"../Util/GetCanvasSize":19,"../Util/MouseToGraphCoordinates":20,"./ApplyGravityOnNodes":1,"./DefaultNodeAttraction":2,"./GetBoundsFromNodes":3,"./GetNodeClosestToPoint":6,"./GraphOptions":8,"./ScaleForScrollEvent":9,"./SetNodeAsBeingDragged":10,"./SetNodeAsHovered":11,"./SetNodeAsNotHovered":12,"./SetNodeNotBeingDragged":13,"./SetupNode":14}],8:[function(require,module,exports){
+},{"../Rendering/DefaultLinkRender":17,"../Rendering/DefaultNodeRender":18,"../Util":19,"../Util/GetCanvasSize":20,"../Util/MouseToGraphCoordinates":21,"./ApplyGravityOnNodes":1,"./BatchPlacement":2,"./DefaultNodeAttraction":3,"./GetBoundsFromNodes":4,"./GetNodeClosestToPoint":7,"./GraphOptions":9,"./ScaleForScrollEvent":10,"./SetNodeAsBeingDragged":11,"./SetNodeAsHovered":12,"./SetNodeAsNotHovered":13,"./SetNodeNotBeingDragged":14,"./SetupNode":15}],9:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -1491,14 +1753,26 @@ function GraphOptions() {
             value: true,
             constructor: Boolean
         },
-        
+        /*
+         * The max speed a node can travel via graph coordinates
+         */
         maxNodeSpeed: {
             value: 30000,
             constructor: Number
         },
-        
+        /*
+         * How quickly the node will decelerate over time with the absent of forces
+         */
         nodeDecelerationConstant: {
             value: 2,
+            constructor: Number
+        },
+        /*
+         * The value returned by the gravity function is multiplied by this value
+         * before being applied to the actual node.
+         */
+        nodeGravityConstant: {
+            value: 1,
             constructor: Number
         }
     };
@@ -1543,8 +1817,12 @@ function GraphOptions() {
     self.nodeDecelerationConstant = function(){
         return _options.nodeDecelerationConstant.value;
     };
+    
+    self.nodeGravityConstant = function (){
+        return _options.nodeGravityConstant.value;
+    };
 }
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -1598,7 +1876,7 @@ module.exports = function (event, graph) {
     graph.setScale(newScale);
 };
 
-},{"../Util/GetCanvasSize":19}],10:[function(require,module,exports){
+},{"../Util/GetCanvasSize":20}],11:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -1636,7 +1914,7 @@ module.exports = function SetNodeAsBeingDragged(node) {
     }
 
 };
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -1676,7 +1954,7 @@ module.exports = function SetNodeAsHovered(node) {
         links[i].node.setRenderDataByKey("$neighborMouseOver", true);
     } 
 };
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -1713,7 +1991,7 @@ module.exports = function SetNodeAsNotHovered(node) {
     }
     
 };
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -1750,7 +2028,7 @@ module.exports = function SetNodeNoteBeingDragged (node) {
     }
 
 };
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -1812,7 +2090,7 @@ module.exports = function SetupNode(options, graph) {
     return node;
     
 };
-},{"../Node2D":15,"./GetFreeSpace":4}],15:[function(require,module,exports){
+},{"../Node2D":16,"./GetFreeSpace":5}],16:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -1926,11 +2204,27 @@ function Node2D(graph) {
 
 
     /**
-     * The current displacement of the node perframe of animatino
+     * The current displacement of the node perframe of animation
+     * 
      * @type Array
      */
     var _velocityVector = [0, 0];
 
+
+    /**
+     * Whether or not the node is being rendered on the graph.
+     * 
+     * @type Boolean
+     */
+    var _enabled = true;
+    
+    self.enabled = function(){
+        return _enabled;
+    };
+    
+    self.setEnabled = function(isEnabled){
+        _enabled = isEnabled;
+    };
 
     /**
      * @stof 105034
@@ -2045,8 +2339,22 @@ function Node2D(graph) {
 
     /**
      * Method called when the node was clicked on the canvas
+     * 
+     * Users can easily set their own onclick function just by calling:
+     * nodeInstance.onclick = someOtherFunction;
      */
     self.onclick = function () {
+        console.log("Clicked");
+    };
+    
+    
+    /**
+     * Method called when the node was double clicked on the canvas
+     * 
+     * Users can easily set their own onclick function just by calling:
+     * nodeInstance.ondoubleclick = someOtherFunction;
+     */
+    self.ondoubleclick = function () {
         console.log("Clicked");
     };
 
@@ -2318,7 +2626,7 @@ function Node2D(graph) {
     };
 
 }
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -2347,14 +2655,14 @@ function Node2D(graph) {
 module.exports = function (g, startPos, endPos, link) {
     var ctx = g.getContext();
 
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 5 * g.getScale();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3 * g.getScale();
     ctx.beginPath();
     ctx.moveTo(startPos[0], startPos[1]);
     ctx.lineTo(endPos[0], endPos[1]);
     ctx.stroke();
 };
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -2383,6 +2691,10 @@ module.exports = function (g, startPos, endPos, link) {
 module.exports = function (node, nodeCanvasPos, graph) {
 
     var mainColor = node.getRenderData()["color"];
+
+    if(!mainColor){
+        mainColor = "#777777";
+    }
 
     var ctx = graph.getContext();
     ctx.fillStyle = mainColor;
@@ -2448,7 +2760,7 @@ module.exports = function (node, nodeCanvasPos, graph) {
 
 };
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -2522,7 +2834,7 @@ module.exports = {
         return !isNaN(parseFloat(n)) && isFinite(n);
     }
 };
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -2556,7 +2868,7 @@ module.exports = {
 module.exports = function (graph) {
     return [graph.getContext().canvas.width, graph.getContext().canvas.height];
 };
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -2594,5 +2906,5 @@ module.exports = function (mouseEvent, graph) {
 
     return {"x": graphX, "y": graphY};
 };
-},{}]},{},[7])(7)
+},{}]},{},[8])(8)
 });
