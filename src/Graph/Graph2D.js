@@ -93,20 +93,20 @@ function Graph2D(canvas) {
      * @type Node2D[]
      */
     var _enabledNodes = [];
-    
-    
+
+
     /**
      * Nodes that have been added to the graph, but are not being rendered
      */
     var _disabledNodes = [];
-    
+
 
     var _graphOptions = new GraphOptions();
-    
-    self.setOption = function(optionName, value){
+
+    self.setOption = function (optionName, value) {
         _graphOptions.setOption(optionName, value);
     };
-    
+
     self.nodeDecelerationConstant = _graphOptions.nodeDecelerationConstant;
     self.maxNodeSpeed = _graphOptions.maxNodeSpeed;
 
@@ -397,13 +397,18 @@ function Graph2D(canvas) {
             _mouseMoveCalled(e);
         });
 
-        cvs.addEventListener('mousewheel', function (e) {
+        addWheelListener(cvs, function (e) {
             ScaleForScrollEvent(e, self);
         });
 
         cvs.addEventListener('dblclick', function (e) {
             _doubleClickCalled(e);
         });
+
+        cvs.addEventListener("touchstart", console.log, false);
+        cvs.addEventListener("touchend", console.log, false);
+        cvs.addEventListener("touchcancel", console.log, false);
+        cvs.addEventListener("touchmove", console.log, false);
 
     };
 
@@ -436,7 +441,7 @@ function Graph2D(canvas) {
 
     self.clearLinks = function () {
 
-        _enabledNodes.forEach(function(node){
+        _enabledNodes.forEach(function (node) {
             node.clearLinks();
         });
 
@@ -444,7 +449,7 @@ function Graph2D(canvas) {
     };
 
 
-    self.clearNodes = function(){
+    self.clearNodes = function () {
         _enabledNodes = [];
         self.clearLinks();
     };
@@ -455,71 +460,71 @@ function Graph2D(canvas) {
      * @param {type} node The node to be removed
      * @returns {Boolean} whether or not a node was removed
      */
-    self.destroyNode = function(node){
-        
-        if(!node){
+    self.destroyNode = function (node) {
+
+        if (!node) {
             return false;
         }
-        
+
         // See if the node is in the enabled list.
-        for(var i = 0; i < _enabledNodes.length; i ++){
-            if(_enabledNodes[i].getId() === node.getId()){
+        for (var i = 0; i < _enabledNodes.length; i++) {
+            if (_enabledNodes[i].getId() === node.getId()) {
                 _enabledNodes.splice(i, 1);
                 return true;
             }
         }
-        
+
         // Now make sure it's not in the disabled nodes.
-        for(var i = 0; i < _enabledNodes.length; i ++){
-            if(_enabledNodes[i].getId() === node.getId()){
+        for (var i = 0; i < _enabledNodes.length; i++) {
+            if (_enabledNodes[i].getId() === node.getId()) {
                 _enabledNodes.splice(i, 1);
                 return true;
             }
         }
-        
+
         // Guess we couldn't find the node..
         return false;
     };
-    
-    
+
+
     /**
      * 
      * @param {type} node The node to disable
      * @returns {Boolean} Whether or not the node was succesfully disabeld
      */
-    self.disableNode = function(node){
-        
-        if(!node){
+    self.disableNode = function (node) {
+
+        if (!node) {
             return false;
         }
-        
-        for(var i = 0; i < _enabledNodes.length; i ++){
-            if(_enabledNodes[i].getId() === node.getId()){
+
+        for (var i = 0; i < _enabledNodes.length; i++) {
+            if (_enabledNodes[i].getId() === node.getId()) {
                 _disabledNodes.push(_enabledNodes[i]);
                 _enabledNodes[i].setEnabled(false);
                 _enabledNodes.splice(i, 1);
                 return true;
             }
         }
-        
+
         return false;
     };
-    
-    self.enableNode = function(node){
-        
-        if(!node){
+
+    self.enableNode = function (node) {
+
+        if (!node) {
             return false;
         }
-        
-        for(var i = 0; i < _disabledNodes.length; i ++){
-            if(_disabledNodes[i].getId() === node.getId()){
+
+        for (var i = 0; i < _disabledNodes.length; i++) {
+            if (_disabledNodes[i].getId() === node.getId()) {
                 _enabledNodes.push(_disabledNodes[i]);
                 _disabledNodes[i].setEnabled(true);
                 _disabledNodes.splice(i, 1);
                 return true;
             }
         }
-        
+
         return false;
     };
 
@@ -538,18 +543,18 @@ function Graph2D(canvas) {
      * @param {type} nodes Will only look at these nodes when seeing which ones closest to the point.  Defaults to all nodes in graph
      * @returns {unresolved}
      */
-    self.getNodeClosestToPoint = function(point, nodes){
-        
-        if(!point){
+    self.getNodeClosestToPoint = function (point, nodes) {
+
+        if (!point) {
             return null;
         }
-        
-        if(!nodes){
+
+        if (!nodes) {
             return GetNodeClosestToPoint(point, _enabledNodes);
         }
-        
+
         return GetNodeClosestToPoint(point, nodes);
-        
+
     };
 
 
@@ -595,49 +600,49 @@ function Graph2D(canvas) {
     self.getScale = function () {
         return _scale;
     };
-    
-    
+
+
     self.setScale = function (newScale) {
-        
-        if(typeof newScale !== 'number' || newScale <= 0){
+
+        if (typeof newScale !== 'number' || newScale <= 0) {
             return;
         }
-        
+
         _scale = newScale;
     };
 
 
-    var _scaleToBounds = function(bounds){
-        
+    var _scaleToBounds = function (bounds) {
+
         var desiredScale = _scale;
-        
-        if(GetCanvasSizeOfGraph(self)[0] < GetCanvasSizeOfGraph(self)[1]){
-            
+
+        if (GetCanvasSizeOfGraph(self)[0] < GetCanvasSizeOfGraph(self)[1]) {
+
             // Scale by width
             var desiredWidth = bounds[2];
             var currentUnscaledWidth = GetCanvasSizeOfGraph(self)[0];
-            
-            desiredScale = currentUnscaledWidth/desiredWidth;
-            
+
+            desiredScale = currentUnscaledWidth / desiredWidth;
+
         } else {
 
             // Scale by height
             var desiredHeight = bounds[3];
             var currentUnscaledHeight = GetCanvasSizeOfGraph(self)[1];
-            
-            desiredScale = currentUnscaledHeight/desiredHeight;
+
+            desiredScale = currentUnscaledHeight / desiredHeight;
         }
-        
+
         var direction = desiredScale - _scale;
-            
+
         _scale += direction * 0.1;
-        
+
     };
 
 
     self.getBoundsFromNodes = require('./GetBoundsFromNodes');
 
-    
+
     /**
      * The default node rendering function assigned to all nodes upon creation
      * 
@@ -660,7 +665,7 @@ function Graph2D(canvas) {
      * @returns {unresolved}
      */
     var _defaultNodeMouseDetection = function (node, graph, mousePos) {
-       return (node.distanceFrom(mousePos) <= node.getRadius() * .8);
+        return (node.distanceFrom(mousePos) <= node.getRadius() * .8);
     };
 
 
@@ -813,9 +818,9 @@ function Graph2D(canvas) {
      * @param {type} extraData
      * @returns {Number}
      */
-    var _nodeAttraction = require('./DefaultNodeAttraction'); 
+    var _nodeAttraction = require('./DefaultNodeAttraction');
 
-    
+
     /**
      * An array of function calls that will be called and then cleared
      * at the end of the frame render
@@ -844,8 +849,8 @@ function Graph2D(canvas) {
     };
 
 
-    self.centerOverNodes = function(nodes, duration){
-        
+    self.centerOverNodes = function (nodes, duration) {
+
     };
 
 
@@ -854,22 +859,22 @@ function Graph2D(canvas) {
         if (!_enabledNodes || _enabledNodes.length === 0) {
             return;
         }
-        
+
         var bounds = self.getBoundsFromNodes(_enabledNodes);
-        
+
         _scaleToBounds(bounds);
 
-        var average = [bounds[0]+(bounds[2]/2), bounds[1]+(bounds[3]/2)];
+        var average = [bounds[0] + (bounds[2] / 2), bounds[1] + (bounds[3] / 2)];
         var canvasSize = GetCanvasSizeOfGraph(self);
 
         var desiredPos = [(canvasSize[0] / _scale / 2) - average[0],
-                          (canvasSize[1] / _scale / 2) - average[1]];
+            (canvasSize[1] / _scale / 2) - average[1]];
 
         var difference = [desiredPos[0] - _xPosition, desiredPos[1] - _yPosition];
 
         _xPosition += difference[0] * 0.1;
         _yPosition += difference[1] * 0.1;
-        
+
     };
 
 
@@ -935,7 +940,7 @@ function Graph2D(canvas) {
         // Draw the lines between nodes to display links
         _nodeLinks.forEach(function (link) {
 
-            if(!link.nodes[0].enabled() || !link.nodes[1].enabled()){
+            if (!link.nodes[0].enabled() || !link.nodes[1].enabled()) {
                 return;
             }
 
@@ -969,16 +974,16 @@ function Graph2D(canvas) {
         _enabledNodes.forEach(function (n) {
 
             var moved = false;
-            
+
             // Translate the node this frame
-            if(_graphOptions.applyTranslation()){
+            if (_graphOptions.applyTranslation()) {
                 moved = n.translate((Date.now() - _lastDrawFrame) / 1000);
             }
 
             // TODO: Need to also check if a mouse event happened this frame
             // TODO: Plenty of optimization needed
             if (_lastSeenMousePos !== null) {
-                
+
                 if (_graphOptions.applyGravity() && _graphOptions.applyTranslation()) {
                     if (moved) {
                         _mouseHoverCheck(n);
@@ -986,7 +991,7 @@ function Graph2D(canvas) {
                 } else {
                     _mouseHoverCheck(n);
                 }
-                
+
             }
 
             var graphPos = self.getPosition();

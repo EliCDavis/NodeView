@@ -25,6 +25,8 @@
 var GetCanvasSizeOfGraph = require('../Util/GetCanvasSize');
 
 module.exports = function (event, graph) {
+    
+
     var _scale = graph.getScale();
     var newScale = _scale;
     var direction = 0;
