@@ -272,6 +272,8 @@ function Graph2D(canvas) {
 
     var _mouseDownCalled = function (event) {
 
+        console.log(event);
+
         _lastSeenMousePos = event;
 
         var coords = _mouseToGraphCoordinates(event, self);
@@ -381,34 +383,39 @@ function Graph2D(canvas) {
      */
     var _initializeGraph = function (cvs) {
 
-        cvs.addEventListener('mouseup', function (e) {
-            _mouseUpCalled(e);
-        });
+        // Desktop mouse listeners
+        cvs.addEventListener('mouseup', _mouseUpCalled);
+        cvs.addEventListener('mousedown', _mouseDownCalled);
+        cvs.addEventListener('mouseout', _mouseOutCalled);
+        cvs.addEventListener('mousemove', _mouseMoveCalled);
+        cvs.addEventListener('dblclick', _doubleClickCalled);
 
-        cvs.addEventListener('mousedown', function (e) {
-            _mouseDownCalled(e);
-        });
-
-        cvs.addEventListener('mouseout', function (e) {
-            _mouseOutCalled(e);
-        });
-
-        cvs.addEventListener('mousemove', function (e) {
-            _mouseMoveCalled(e);
-        });
-
+        // Special function made for cross browser support of wheel event.
         addWheelListener(cvs, function (e) {
             ScaleForScrollEvent(e, self);
         });
 
-        cvs.addEventListener('dblclick', function (e) {
-            _doubleClickCalled(e);
-        });
+        var _touchToClick = function(e){
+            var n = {};
+            for(var k in e.touches[0]) n[k]=e.touches[0][k];
+            return n;
+        };
 
-        cvs.addEventListener("touchstart", console.log, false);
-        cvs.addEventListener("touchend", console.log, false);
-        cvs.addEventListener("touchcancel", console.log, false);
-        cvs.addEventListener("touchmove", console.log, false);
+        cvs.addEventListener("touchstart", function(e){
+            _mouseDownCalled(_touchToClick(e));
+        }, false);
+        
+        cvs.addEventListener("touchend", function(e){
+            _mouseUpCalled(_touchToClick(e));
+        }, false);
+        
+        cvs.addEventListener("touchcancel", function(e){
+            _mouseOutCalled(_touchToClick(e));
+        }, false);
+        
+        cvs.addEventListener("touchmove", function(e){
+            _mouseMoveCalled(_touchToClick(e));
+        }, false);
 
     };
 
