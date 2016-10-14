@@ -24,6 +24,8 @@
 
 "use strict";
 
+var Util = require('./Util');
+
 module.exports = Node2D;
 
 /**
@@ -69,21 +71,6 @@ function Node2D(graph) {
      * @type Number
      */
     var _yPosition = 0;
-
-
-    /**
-     * A list of all nodes that consider this node a parent.
-     * 
-     * @type Array
-     */
-    var _children = [];
-
-
-    /**
-     * The current parent of the node.
-     * @type Node2D
-     */
-    var _parent = null;
 
 
     /**
@@ -133,21 +120,7 @@ function Node2D(graph) {
         _enabled = isEnabled;
     };
 
-    /**
-     * @stof 105034
-     * @returns {String}
-     */
-    function generateUUID() {
-        var d = new Date().getTime();
-        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            var r = (d + Math.random() * 16) % 16 | 0;
-            d = Math.floor(d / 16);
-            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
-        return uuid;
-    }
-    
-    var _id = generateUUID();
+    var _id = Util.generateUUID();
     
     self.getId = function(){
         return _id;
@@ -470,66 +443,6 @@ function Node2D(graph) {
     
     self.clearLinks = function(){
         _links = [];
-    };
-
-
-    self.setParent = function (newParent) {
-
-        // TODO: Make sure we're not setting one of our children or children childrens as our parent.
-
-        // Make sure our parent knows we're leaving them for another..
-        if (_parent !== null && _parent !== undefined) {
-            _parent.removeChild(self);
-        }
-
-        _parent = newParent;
-
-        if (_parent.getChildren().indexOf(self) === -1) {
-            _parent.addChild(self);
-        }
-
-    };
-
-
-    self.getParent = function () {
-        return _parent;
-    };
-
-
-    self.addChild = function (child) {
-
-        // TODO: Make sure this child does not exist ANYWHERE on the family tree
-
-        // Make sure we don't already have the child
-        if (_children.indexOf(child) !== -1) {
-            console.log("We already have that node as a child; ", child);
-            return;
-        }
-
-        _children.push(child);
-
-        if (child.getParent() !== self) {
-            child.setParent(self);
-        }
-
-    };
-
-
-    self.getChildren = function () {
-        return _children;
-    };
-
-
-    self.removeChild = function (child) {
-
-        var index = _children.indexOf(child);
-
-        if (index === -1) {
-            throw "Failure to remove child! Trying to remove a child we don't have!";
-        }
-
-        _children.splice(index, 1);
-
     };
 
 }

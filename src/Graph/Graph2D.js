@@ -921,22 +921,6 @@ function Graph2D(canvas) {
 //                10 * _scale
 //                );
 
-        // Draw lines to show child parent relationship
-        _enabledNodes.forEach(function (node) {
-            node.getChildren().forEach(function (link) {
-
-                var ctx = self.getContext();
-
-                ctx.beginPath();
-                ctx.moveTo((node.getPosition()[0] + _xPosition) * _scale,
-                        (node.getPosition()[1] + _yPosition) * _scale);
-                ctx.lineTo((link.getPosition()[0] + _xPosition) * _scale,
-                        (link.getPosition()[1] + _yPosition) * _scale);
-                ctx.stroke();
-
-            });
-        });
-
         // Draw the lines between nodes to display links
         _nodeLinks.forEach(function (link) {
 
