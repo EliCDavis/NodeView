@@ -101,8 +101,8 @@ Current variables modified by the graph:
 
 #### Example:
 ```js
-var node1 = new Node2D();
-var node2 = new Node2D();
+var node1 = graphInstance.createNode();
+var node2 = graphInstance.createNode();
 graphInstance.linkNodes(node1, node2, {
     $directedTowards: node1, // Rendering will now have an arrow pointing towards node1
     distance: 5 // My own random data I want to be associated with the link

@@ -766,20 +766,20 @@ function Graph2D(canvas) {
      * @type Node2D[]
      */
     var _enabledNodes = [];
-    
-    
+
+
     /**
      * Nodes that have been added to the graph, but are not being rendered
      */
     var _disabledNodes = [];
-    
+
 
     var _graphOptions = new GraphOptions();
-    
-    self.setOption = function(optionName, value){
+
+    self.setOption = function (optionName, value) {
         _graphOptions.setOption(optionName, value);
     };
-    
+
     self.nodeDecelerationConstant = _graphOptions.nodeDecelerationConstant;
     self.maxNodeSpeed = _graphOptions.maxNodeSpeed;
 
@@ -945,6 +945,8 @@ function Graph2D(canvas) {
 
     var _mouseDownCalled = function (event) {
 
+        console.log(event);
+
         _lastSeenMousePos = event;
 
         var coords = _mouseToGraphCoordinates(event, self);
@@ -1054,29 +1056,39 @@ function Graph2D(canvas) {
      */
     var _initializeGraph = function (cvs) {
 
-        cvs.addEventListener('mouseup', function (e) {
-            _mouseUpCalled(e);
-        });
+        // Desktop mouse listeners
+        cvs.addEventListener('mouseup', _mouseUpCalled);
+        cvs.addEventListener('mousedown', _mouseDownCalled);
+        cvs.addEventListener('mouseout', _mouseOutCalled);
+        cvs.addEventListener('mousemove', _mouseMoveCalled);
+        cvs.addEventListener('dblclick', _doubleClickCalled);
 
-        cvs.addEventListener('mousedown', function (e) {
-            _mouseDownCalled(e);
-        });
-
-        cvs.addEventListener('mouseout', function (e) {
-            _mouseOutCalled(e);
-        });
-
-        cvs.addEventListener('mousemove', function (e) {
-            _mouseMoveCalled(e);
-        });
-
-        cvs.addEventListener('mousewheel', function (e) {
+        // Special function made for cross browser support of wheel event.
+        addWheelListener(cvs, function (e) {
             ScaleForScrollEvent(e, self);
         });
 
-        cvs.addEventListener('dblclick', function (e) {
-            _doubleClickCalled(e);
-        });
+        var _touchToClick = function(e){
+            var n = {};
+            for(var k in e.touches[0]) n[k]=e.touches[0][k];
+            return n;
+        };
+
+        cvs.addEventListener("touchstart", function(e){
+            _mouseDownCalled(_touchToClick(e));
+        }, false);
+        
+        cvs.addEventListener("touchend", function(e){
+            _mouseUpCalled(_touchToClick(e));
+        }, false);
+        
+        cvs.addEventListener("touchcancel", function(e){
+            _mouseOutCalled(_touchToClick(e));
+        }, false);
+        
+        cvs.addEventListener("touchmove", function(e){
+            _mouseMoveCalled(_touchToClick(e));
+        }, false);
 
     };
 
@@ -1109,7 +1121,7 @@ function Graph2D(canvas) {
 
     self.clearLinks = function () {
 
-        _enabledNodes.forEach(function(node){
+        _enabledNodes.forEach(function (node) {
             node.clearLinks();
         });
 
@@ -1117,7 +1129,7 @@ function Graph2D(canvas) {
     };
 
 
-    self.clearNodes = function(){
+    self.clearNodes = function () {
         _enabledNodes = [];
         self.clearLinks();
     };
@@ -1128,71 +1140,71 @@ function Graph2D(canvas) {
      * @param {type} node The node to be removed
      * @returns {Boolean} whether or not a node was removed
      */
-    self.destroyNode = function(node){
-        
-        if(!node){
+    self.destroyNode = function (node) {
+
+        if (!node) {
             return false;
         }
-        
+
         // See if the node is in the enabled list.
-        for(var i = 0; i < _enabledNodes.length; i ++){
-            if(_enabledNodes[i].getId() === node.getId()){
+        for (var i = 0; i < _enabledNodes.length; i++) {
+            if (_enabledNodes[i].getId() === node.getId()) {
                 _enabledNodes.splice(i, 1);
                 return true;
             }
         }
-        
+
         // Now make sure it's not in the disabled nodes.
-        for(var i = 0; i < _enabledNodes.length; i ++){
-            if(_enabledNodes[i].getId() === node.getId()){
+        for (var i = 0; i < _enabledNodes.length; i++) {
+            if (_enabledNodes[i].getId() === node.getId()) {
                 _enabledNodes.splice(i, 1);
                 return true;
             }
         }
-        
+
         // Guess we couldn't find the node..
         return false;
     };
-    
-    
+
+
     /**
      * 
      * @param {type} node The node to disable
      * @returns {Boolean} Whether or not the node was succesfully disabeld
      */
-    self.disableNode = function(node){
-        
-        if(!node){
+    self.disableNode = function (node) {
+
+        if (!node) {
             return false;
         }
-        
-        for(var i = 0; i < _enabledNodes.length; i ++){
-            if(_enabledNodes[i].getId() === node.getId()){
+
+        for (var i = 0; i < _enabledNodes.length; i++) {
+            if (_enabledNodes[i].getId() === node.getId()) {
                 _disabledNodes.push(_enabledNodes[i]);
                 _enabledNodes[i].setEnabled(false);
                 _enabledNodes.splice(i, 1);
                 return true;
             }
         }
-        
+
         return false;
     };
-    
-    self.enableNode = function(node){
-        
-        if(!node){
+
+    self.enableNode = function (node) {
+
+        if (!node) {
             return false;
         }
-        
-        for(var i = 0; i < _disabledNodes.length; i ++){
-            if(_disabledNodes[i].getId() === node.getId()){
+
+        for (var i = 0; i < _disabledNodes.length; i++) {
+            if (_disabledNodes[i].getId() === node.getId()) {
                 _enabledNodes.push(_disabledNodes[i]);
                 _disabledNodes[i].setEnabled(true);
                 _disabledNodes.splice(i, 1);
                 return true;
             }
         }
-        
+
         return false;
     };
 
@@ -1211,18 +1223,18 @@ function Graph2D(canvas) {
      * @param {type} nodes Will only look at these nodes when seeing which ones closest to the point.  Defaults to all nodes in graph
      * @returns {unresolved}
      */
-    self.getNodeClosestToPoint = function(point, nodes){
-        
-        if(!point){
+    self.getNodeClosestToPoint = function (point, nodes) {
+
+        if (!point) {
             return null;
         }
-        
-        if(!nodes){
+
+        if (!nodes) {
             return GetNodeClosestToPoint(point, _enabledNodes);
         }
-        
+
         return GetNodeClosestToPoint(point, nodes);
-        
+
     };
 
 
@@ -1268,49 +1280,49 @@ function Graph2D(canvas) {
     self.getScale = function () {
         return _scale;
     };
-    
-    
+
+
     self.setScale = function (newScale) {
-        
-        if(typeof newScale !== 'number' || newScale <= 0){
+
+        if (typeof newScale !== 'number' || newScale <= 0) {
             return;
         }
-        
+
         _scale = newScale;
     };
 
 
-    var _scaleToBounds = function(bounds){
-        
+    var _scaleToBounds = function (bounds) {
+
         var desiredScale = _scale;
-        
-        if(GetCanvasSizeOfGraph(self)[0] < GetCanvasSizeOfGraph(self)[1]){
-            
+
+        if (GetCanvasSizeOfGraph(self)[0] < GetCanvasSizeOfGraph(self)[1]) {
+
             // Scale by width
             var desiredWidth = bounds[2];
             var currentUnscaledWidth = GetCanvasSizeOfGraph(self)[0];
-            
-            desiredScale = currentUnscaledWidth/desiredWidth;
-            
+
+            desiredScale = currentUnscaledWidth / desiredWidth;
+
         } else {
 
             // Scale by height
             var desiredHeight = bounds[3];
             var currentUnscaledHeight = GetCanvasSizeOfGraph(self)[1];
-            
-            desiredScale = currentUnscaledHeight/desiredHeight;
+
+            desiredScale = currentUnscaledHeight / desiredHeight;
         }
-        
+
         var direction = desiredScale - _scale;
-            
+
         _scale += direction * 0.1;
-        
+
     };
 
 
     self.getBoundsFromNodes = require('./GetBoundsFromNodes');
 
-    
+
     /**
      * The default node rendering function assigned to all nodes upon creation
      * 
@@ -1333,7 +1345,7 @@ function Graph2D(canvas) {
      * @returns {unresolved}
      */
     var _defaultNodeMouseDetection = function (node, graph, mousePos) {
-       return (node.distanceFrom(mousePos) <= node.getRadius() * .8);
+        return (node.distanceFrom(mousePos) <= node.getRadius() * .8);
     };
 
 
@@ -1486,9 +1498,9 @@ function Graph2D(canvas) {
      * @param {type} extraData
      * @returns {Number}
      */
-    var _nodeAttraction = require('./DefaultNodeAttraction'); 
+    var _nodeAttraction = require('./DefaultNodeAttraction');
 
-    
+
     /**
      * An array of function calls that will be called and then cleared
      * at the end of the frame render
@@ -1517,8 +1529,8 @@ function Graph2D(canvas) {
     };
 
 
-    self.centerOverNodes = function(nodes, duration){
-        
+    self.centerOverNodes = function (nodes, duration) {
+
     };
 
 
@@ -1527,22 +1539,22 @@ function Graph2D(canvas) {
         if (!_enabledNodes || _enabledNodes.length === 0) {
             return;
         }
-        
+
         var bounds = self.getBoundsFromNodes(_enabledNodes);
-        
+
         _scaleToBounds(bounds);
 
-        var average = [bounds[0]+(bounds[2]/2), bounds[1]+(bounds[3]/2)];
+        var average = [bounds[0] + (bounds[2] / 2), bounds[1] + (bounds[3] / 2)];
         var canvasSize = GetCanvasSizeOfGraph(self);
 
         var desiredPos = [(canvasSize[0] / _scale / 2) - average[0],
-                          (canvasSize[1] / _scale / 2) - average[1]];
+            (canvasSize[1] / _scale / 2) - average[1]];
 
         var difference = [desiredPos[0] - _xPosition, desiredPos[1] - _yPosition];
 
         _xPosition += difference[0] * 0.1;
         _yPosition += difference[1] * 0.1;
-        
+
     };
 
 
@@ -1589,26 +1601,10 @@ function Graph2D(canvas) {
 //                10 * _scale
 //                );
 
-        // Draw lines to show child parent relationship
-        _enabledNodes.forEach(function (node) {
-            node.getChildren().forEach(function (link) {
-
-                var ctx = self.getContext();
-
-                ctx.beginPath();
-                ctx.moveTo((node.getPosition()[0] + _xPosition) * _scale,
-                        (node.getPosition()[1] + _yPosition) * _scale);
-                ctx.lineTo((link.getPosition()[0] + _xPosition) * _scale,
-                        (link.getPosition()[1] + _yPosition) * _scale);
-                ctx.stroke();
-
-            });
-        });
-
         // Draw the lines between nodes to display links
         _nodeLinks.forEach(function (link) {
 
-            if(!link.nodes[0].enabled() || !link.nodes[1].enabled()){
+            if (!link.nodes[0].enabled() || !link.nodes[1].enabled()) {
                 return;
             }
 
@@ -1642,16 +1638,16 @@ function Graph2D(canvas) {
         _enabledNodes.forEach(function (n) {
 
             var moved = false;
-            
+
             // Translate the node this frame
-            if(_graphOptions.applyTranslation()){
+            if (_graphOptions.applyTranslation()) {
                 moved = n.translate((Date.now() - _lastDrawFrame) / 1000);
             }
 
             // TODO: Need to also check if a mouse event happened this frame
             // TODO: Plenty of optimization needed
             if (_lastSeenMousePos !== null) {
-                
+
                 if (_graphOptions.applyGravity() && _graphOptions.applyTranslation()) {
                     if (moved) {
                         _mouseHoverCheck(n);
@@ -1659,7 +1655,7 @@ function Graph2D(canvas) {
                 } else {
                     _mouseHoverCheck(n);
                 }
-                
+
             }
 
             var graphPos = self.getPosition();
@@ -1850,6 +1846,8 @@ function GraphOptions() {
 var GetCanvasSizeOfGraph = require('../Util/GetCanvasSize');
 
 module.exports = function (event, graph) {
+    
+
     var _scale = graph.getScale();
     var newScale = _scale;
     var direction = 0;
@@ -2066,7 +2064,7 @@ module.exports = function SetupNode(options, graph) {
             node.setRenderDataByKey(key, options.renderData[key]);
         });
     } else {
-        node.setRenderDataByKey('color', '#000000');
+        node.setRenderDataByKey('color', 'rgb(197, 23, 23)');
     }
 
     var setRadius = 70;
@@ -2117,6 +2115,8 @@ module.exports = function SetupNode(options, graph) {
 
 "use strict";
 
+var Util = require('./Util');
+
 module.exports = Node2D;
 
 /**
@@ -2162,21 +2162,6 @@ function Node2D(graph) {
      * @type Number
      */
     var _yPosition = 0;
-
-
-    /**
-     * A list of all nodes that consider this node a parent.
-     * 
-     * @type Array
-     */
-    var _children = [];
-
-
-    /**
-     * The current parent of the node.
-     * @type Node2D
-     */
-    var _parent = null;
 
 
     /**
@@ -2226,21 +2211,7 @@ function Node2D(graph) {
         _enabled = isEnabled;
     };
 
-    /**
-     * @stof 105034
-     * @returns {String}
-     */
-    function generateUUID() {
-        var d = new Date().getTime();
-        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            var r = (d + Math.random() * 16) % 16 | 0;
-            d = Math.floor(d / 16);
-            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
-        return uuid;
-    }
-    
-    var _id = generateUUID();
+    var _id = Util.generateUUID();
     
     self.getId = function(){
         return _id;
@@ -2565,68 +2536,8 @@ function Node2D(graph) {
         _links = [];
     };
 
-
-    self.setParent = function (newParent) {
-
-        // TODO: Make sure we're not setting one of our children or children childrens as our parent.
-
-        // Make sure our parent knows we're leaving them for another..
-        if (_parent !== null && _parent !== undefined) {
-            _parent.removeChild(self);
-        }
-
-        _parent = newParent;
-
-        if (_parent.getChildren().indexOf(self) === -1) {
-            _parent.addChild(self);
-        }
-
-    };
-
-
-    self.getParent = function () {
-        return _parent;
-    };
-
-
-    self.addChild = function (child) {
-
-        // TODO: Make sure this child does not exist ANYWHERE on the family tree
-
-        // Make sure we don't already have the child
-        if (_children.indexOf(child) !== -1) {
-            console.log("We already have that node as a child; ", child);
-            return;
-        }
-
-        _children.push(child);
-
-        if (child.getParent() !== self) {
-            child.setParent(self);
-        }
-
-    };
-
-
-    self.getChildren = function () {
-        return _children;
-    };
-
-
-    self.removeChild = function (child) {
-
-        var index = _children.indexOf(child);
-
-        if (index === -1) {
-            throw "Failure to remove child! Trying to remove a child we don't have!";
-        }
-
-        _children.splice(index, 1);
-
-    };
-
 }
-},{}],17:[function(require,module,exports){
+},{"./Util":19}],17:[function(require,module,exports){
 /* 
  * The MIT License
  *
@@ -2654,13 +2565,47 @@ function Node2D(graph) {
 
 module.exports = function (g, startPos, endPos, link) {
     var ctx = g.getContext();
-
+    var scale = g.getScale();
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 3 * g.getScale();
     ctx.beginPath();
     ctx.moveTo(startPos[0], startPos[1]);
     ctx.lineTo(endPos[0], endPos[1]);
     ctx.stroke();
+
+    var center = [(startPos[0] + endPos[0]) / 2, (startPos[1] + endPos[1]) / 2];
+    var direction = null;
+    if (link.linkData.$directedTowards) {
+        var endPoint = link.linkData.$directedTowards.getPosition();
+        var startPoint = null;
+        if (link.linkData.$directedTowards.getId() === link.nodes[0].getId()) {
+            startPoint = link.nodes[1].getPosition();
+        } else {
+            startPoint = link.nodes[0].getPosition();
+        }
+
+        direction = [endPoint[0] - startPoint[0], endPoint[1] - startPoint[1]];
+
+        var mag = Math.sqrt((direction[0] * direction[0]) +
+                (direction[1] * direction[1]));
+
+        direction = [direction[0] / mag, direction[1] / mag];
+
+    }
+
+    // Draws an arrow
+    for (var i = 0; i < 7; i++) {
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.beginPath();
+        ctx.arc(center[0] + (direction[0] * i * 10 * scale),
+                center[1] + (direction[1] * i * 10 * scale),
+                (16 - (i * 2)) * scale,
+                0,
+                2 * Math.PI);
+
+        ctx.fill();
+    }
+
 };
 },{}],18:[function(require,module,exports){
 /* 
@@ -2693,7 +2638,7 @@ module.exports = function (node, nodeCanvasPos, graph) {
     var mainColor = node.getRenderData()["color"];
 
     if(!mainColor){
-        mainColor = "#777777";
+        mainColor = "rgb(197, 23, 23)";
     }
 
     var ctx = graph.getContext();
@@ -2789,6 +2734,74 @@ module.exports = function (node, nodeCanvasPos, graph) {
 module.exports = {
     "init": function () {
 
+
+        // https://developer.mozilla.org/en-US/docs/Web/Events/wheel
+        // creates a global "addWheelListener" method
+        // example: addWheelListener( elem, function( e ) { console.log( e.deltaY ); e.preventDefault(); } );
+        (function (window, document) {
+
+            var prefix = "", _addEventListener, support;
+
+            // detect event model
+            if (window.addEventListener) {
+                _addEventListener = "addEventListener";
+            } else {
+                _addEventListener = "attachEvent";
+                prefix = "on";
+            }
+
+            // detect available wheel event
+            support = "onwheel" in document.createElement("div") ? "wheel" : // Modern browsers support "wheel"
+                    document.onmousewheel !== undefined ? "mousewheel" : // Webkit and IE support at least "mousewheel"
+                    "DOMMouseScroll"; // let's assume that remaining browsers are older Firefox
+
+            window.addWheelListener = function (elem, callback, useCapture) {
+                _addWheelListener(elem, support, callback, useCapture);
+
+                // handle MozMousePixelScroll in older Firefox
+                if (support == "DOMMouseScroll") {
+                    _addWheelListener(elem, "MozMousePixelScroll", callback, useCapture);
+                }
+            };
+
+            function _addWheelListener(elem, eventName, callback, useCapture) {
+                elem[ _addEventListener ](prefix + eventName, support == "wheel" ? callback : function (originalEvent) {
+                    !originalEvent && (originalEvent = window.event);
+
+                    // create a normalized event object
+                    var event = {
+                        // keep a ref to the original event object
+                        originalEvent: originalEvent,
+                        target: originalEvent.target || originalEvent.srcElement,
+                        type: "wheel",
+                        deltaMode: originalEvent.type == "MozMousePixelScroll" ? 0 : 1,
+                        deltaX: 0,
+                        deltaY: 0,
+                        deltaZ: 0,
+                        preventDefault: function () {
+                            originalEvent.preventDefault ?
+                                    originalEvent.preventDefault() :
+                                    originalEvent.returnValue = false;
+                        }
+                    };
+
+                    // calculate deltaY (and deltaX) according to the event
+                    if (support == "mousewheel") {
+                        event.deltaY = -1 / 40 * originalEvent.wheelDelta;
+                        // Webkit also support wheelDeltaX
+                        originalEvent.wheelDeltaX && (event.deltaX = -1 / 40 * originalEvent.wheelDeltaX);
+                    } else {
+                        event.deltaY = originalEvent.detail;
+                    }
+
+                    // it's time to fire the callback
+                    return callback(event);
+
+                }, useCapture || false);
+            }
+
+        })(window, document);
+
         // IE7 and 8 support for indexOf
         Array.prototype.indexOf || (Array.prototype.indexOf = function (d, e) {
             var a;
@@ -2828,10 +2841,23 @@ module.exports = {
         HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
 
     },
-    
     // http://stackoverflow.com/questions/9716468/is-there-any-function-like-isnumeric-in-javascript-to-validate-numbers
     isNumeric: function (n) {
         return !isNaN(parseFloat(n)) && isFinite(n);
+    },
+    
+    /**
+     * @stof 105034
+     * @returns {String}
+     */
+    generateUUID: function () {
+        var d = new Date().getTime();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = (d + Math.random() * 16) % 16 | 0;
+            d = Math.floor(d / 16);
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+        return uuid;
     }
 };
 },{}],20:[function(require,module,exports){

@@ -25,11 +25,45 @@
 
 module.exports = function (g, startPos, endPos, link) {
     var ctx = g.getContext();
-
+    var scale = g.getScale();
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 3 * g.getScale();
     ctx.beginPath();
     ctx.moveTo(startPos[0], startPos[1]);
     ctx.lineTo(endPos[0], endPos[1]);
     ctx.stroke();
+
+    var center = [(startPos[0] + endPos[0]) / 2, (startPos[1] + endPos[1]) / 2];
+    var direction = null;
+    if (link.linkData.$directedTowards) {
+        var endPoint = link.linkData.$directedTowards.getPosition();
+        var startPoint = null;
+        if (link.linkData.$directedTowards.getId() === link.nodes[0].getId()) {
+            startPoint = link.nodes[1].getPosition();
+        } else {
+            startPoint = link.nodes[0].getPosition();
+        }
+
+        direction = [endPoint[0] - startPoint[0], endPoint[1] - startPoint[1]];
+
+        var mag = Math.sqrt((direction[0] * direction[0]) +
+                (direction[1] * direction[1]));
+
+        direction = [direction[0] / mag, direction[1] / mag];
+
+    }
+
+    // Draws an arrow
+    for (var i = 0; i < 7; i++) {
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.beginPath();
+        ctx.arc(center[0] + (direction[0] * i * 10 * scale),
+                center[1] + (direction[1] * i * 10 * scale),
+                (16 - (i * 2)) * scale,
+                0,
+                2 * Math.PI);
+
+        ctx.fill();
+    }
+
 };

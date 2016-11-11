@@ -28,7 +28,7 @@ module.exports = function (node, nodeCanvasPos, graph) {
     var mainColor = node.getRenderData()["color"];
 
     if(!mainColor){
-        mainColor = "#777777";
+        mainColor = "rgb(197, 23, 23)";
     }
 
     var ctx = graph.getContext();

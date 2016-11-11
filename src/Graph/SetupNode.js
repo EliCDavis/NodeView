@@ -35,7 +35,7 @@ module.exports = function SetupNode(options, graph) {
             node.setRenderDataByKey(key, options.renderData[key]);
         });
     } else {
-        node.setRenderDataByKey('color', '#000000');
+        node.setRenderDataByKey('color', 'rgb(197, 23, 23)');
     }
 
     var setRadius = 70;
