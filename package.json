@@ -10,11 +10,19 @@
     "render",
     "browser"
   ],
-  "author": "Eli Davis",
+  "author": {
+    "name": "Eli Davis",
+    "email": "",
+    "url": "https://github.com/EliCDavis"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/EliCDavis/NodeView.git"
+  },
+  "scripts": {
+    "pretest": "gulp build-all",
+    "test": "./node_modules/.bin/karma start --single-run --browsers PhantomJS"
   },
   "contributors": [],
   "dependencies": {},
@@ -32,6 +40,7 @@
     "karma-chrome-launcher": "^2.0.0",
     "karma-firefox-launcher": "^1.0.0",
     "karma-jasmine": "^1.0.2",
+    "karma-phantomjs-launcher": "^1.0.2",
     "vinyl-source-stream": "^1.1.0",
     "watchify": "^3.7.0"
   }
