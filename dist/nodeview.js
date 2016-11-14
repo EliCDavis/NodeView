@@ -1426,6 +1426,10 @@ function Graph2D(canvas) {
             throw "Nodes are already linked!";
         }
 
+        if(!linkData){
+            linkData = {};
+        }
+
         // Tell the nodes their linked
         // TODO: Review and make sure doing this even makes sense
         n1.addLink(n2, linkData);
@@ -1683,13 +1687,21 @@ function Graph2D(canvas) {
         }
 
         _lastDrawFrame = Date.now();
-        window.requestAnimationFrame(_drawFrame);
+        _requestAnimationFrameId = window.requestAnimationFrame(_drawFrame);
 
     };
 
+    var _requestAnimationFrameId = null;
     var _lastDrawFrame = Date.now();
 
     _drawFrame();
+
+    self.forceDrawFrame = function() {
+        if(_requestAnimationFrameId){
+            window.cancelAnimationFrame(_requestAnimationFrameId);
+        }
+        _drawFrame();
+    };
 
 }
 },{"../Rendering/DefaultLinkRender":17,"../Rendering/DefaultNodeRender":18,"../Util":19,"../Util/GetCanvasSize":20,"../Util/MouseToGraphCoordinates":21,"./ApplyGravityOnNodes":1,"./BatchPlacement":2,"./DefaultNodeAttraction":3,"./GetBoundsFromNodes":4,"./GetNodeClosestToPoint":7,"./GraphOptions":9,"./ScaleForScrollEvent":10,"./SetNodeAsBeingDragged":11,"./SetNodeAsHovered":12,"./SetNodeAsNotHovered":13,"./SetNodeNotBeingDragged":14,"./SetupNode":15}],9:[function(require,module,exports){
@@ -2594,16 +2606,18 @@ module.exports = function (g, startPos, endPos, link) {
     }
 
     // Draws an arrow
-    for (var i = 0; i < 7; i++) {
-        ctx.fillStyle = ctx.strokeStyle;
-        ctx.beginPath();
-        ctx.arc(center[0] + (direction[0] * i * 10 * scale),
+    if (direction) {
+        for (var i = 0; i < 7; i++) {
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.beginPath();
+            ctx.arc(center[0] + (direction[0] * i * 10 * scale),
                 center[1] + (direction[1] * i * 10 * scale),
                 (16 - (i * 2)) * scale,
                 0,
                 2 * Math.PI);
 
-        ctx.fill();
+            ctx.fill();
+        }
     }
 
 };
@@ -2646,7 +2660,7 @@ module.exports = function (node, nodeCanvasPos, graph) {
     ctx.beginPath();
     ctx.arc(nodeCanvasPos[0],
             nodeCanvasPos[1],
-            node.getRadius() * graph.getScale() * .8,
+            node.getRadius() * graph.getScale() * 0.8,
             0,
             2 * Math.PI);
     ctx.fill();
@@ -2656,7 +2670,7 @@ module.exports = function (node, nodeCanvasPos, graph) {
         ctx.beginPath();
         ctx.arc(nodeCanvasPos[0],
                 nodeCanvasPos[1],
-                node.getRadius() * graph.getScale() * .8 * .5,
+                node.getRadius() * graph.getScale() * 0.8 * 0.5,
                 0,
                 2 * Math.PI);
         ctx.fill();
@@ -2667,7 +2681,7 @@ module.exports = function (node, nodeCanvasPos, graph) {
         ctx.beginPath();
         ctx.arc(nodeCanvasPos[0],
                 nodeCanvasPos[1],
-                node.getRadius() * graph.getScale() * .8 * .3,
+                node.getRadius() * graph.getScale() * 0.8 * 0.3,
                 0,
                 2 * Math.PI);
         ctx.fill();

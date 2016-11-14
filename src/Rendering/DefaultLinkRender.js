@@ -54,16 +54,18 @@ module.exports = function (g, startPos, endPos, link) {
     }
 
     // Draws an arrow
-    for (var i = 0; i < 7; i++) {
-        ctx.fillStyle = ctx.strokeStyle;
-        ctx.beginPath();
-        ctx.arc(center[0] + (direction[0] * i * 10 * scale),
+    if (direction) {
+        for (var i = 0; i < 7; i++) {
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.beginPath();
+            ctx.arc(center[0] + (direction[0] * i * 10 * scale),
                 center[1] + (direction[1] * i * 10 * scale),
                 (16 - (i * 2)) * scale,
                 0,
                 2 * Math.PI);
 
-        ctx.fill();
+            ctx.fill();
+        }
     }
 
 };

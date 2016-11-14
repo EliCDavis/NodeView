@@ -753,6 +753,10 @@ function Graph2D(canvas) {
             throw "Nodes are already linked!";
         }
 
+        if(!linkData){
+            linkData = {};
+        }
+
         // Tell the nodes their linked
         // TODO: Review and make sure doing this even makes sense
         n1.addLink(n2, linkData);
@@ -1010,12 +1014,20 @@ function Graph2D(canvas) {
         }
 
         _lastDrawFrame = Date.now();
-        window.requestAnimationFrame(_drawFrame);
+        _requestAnimationFrameId = window.requestAnimationFrame(_drawFrame);
 
     };
 
+    var _requestAnimationFrameId = null;
     var _lastDrawFrame = Date.now();
 
     _drawFrame();
+
+    self.forceDrawFrame = function() {
+        if(_requestAnimationFrameId){
+            window.cancelAnimationFrame(_requestAnimationFrameId);
+        }
+        _drawFrame();
+    };
 
 }

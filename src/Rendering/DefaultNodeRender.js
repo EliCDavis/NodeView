@@ -36,7 +36,7 @@ module.exports = function (node, nodeCanvasPos, graph) {
     ctx.beginPath();
     ctx.arc(nodeCanvasPos[0],
             nodeCanvasPos[1],
-            node.getRadius() * graph.getScale() * .8,
+            node.getRadius() * graph.getScale() * 0.8,
             0,
             2 * Math.PI);
     ctx.fill();
@@ -46,7 +46,7 @@ module.exports = function (node, nodeCanvasPos, graph) {
         ctx.beginPath();
         ctx.arc(nodeCanvasPos[0],
                 nodeCanvasPos[1],
-                node.getRadius() * graph.getScale() * .8 * .5,
+                node.getRadius() * graph.getScale() * 0.8 * 0.5,
                 0,
                 2 * Math.PI);
         ctx.fill();
@@ -57,7 +57,7 @@ module.exports = function (node, nodeCanvasPos, graph) {
         ctx.beginPath();
         ctx.arc(nodeCanvasPos[0],
                 nodeCanvasPos[1],
-                node.getRadius() * graph.getScale() * .8 * .3,
+                node.getRadius() * graph.getScale() * 0.8 * 0.3,
                 0,
                 2 * Math.PI);
         ctx.fill();
