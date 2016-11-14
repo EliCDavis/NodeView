@@ -1,4 +1,6 @@
 # Node View
+![Build Status](https://travis-ci.org/EliCDavis/NodeView.svg?branch=master)
+
 Node View is a node rendering library that utilize's HTML5's canvas to allow 
 developers to have full control over how they want their data represented 
 without having to worry about the boring part of the rendering process.
