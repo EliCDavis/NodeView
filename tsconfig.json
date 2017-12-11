@@ -1,0 +1,13 @@
+{
+    "extends": "../../config/tsconfig.base.json",
+    "compilerOptions": {
+        "declarationDir": "dist/types",
+        "outDir": "dist",
+        "typeRoots": ["./node_modules/@types"],
+        "lib": [
+            "es2015",
+            "es5",
+            "es6"
+        ]
+    }
+}
