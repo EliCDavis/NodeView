@@ -9,14 +9,14 @@ class Vector {
     { }
 
     public add(otherVector: Vector): Vector {
-        return new Vector(this.x + otherVector.x, this.y + otherVector.y);
+        return new Vector(this._x + otherVector._x, this._y + otherVector._y);
     }
 
-    get x(): number {
+    public x(){
         return this._x;
     }
 
-    get y(): number {
+    public y(){
         return this._y;
     }
 

@@ -1,6 +1,16 @@
+import { Vector } from "./Vector";
+
 export { NodeView }
 
 class NodeView {
+
+    context: CanvasRenderingContext2D;
+
+    scale: number;
+
+    topLeftPosition: Vector;
+
+    lastSeenMousePosition: Vector;
 
     constructor(canvasElement: HTMLCanvasElement) {
 
@@ -9,7 +19,7 @@ class NodeView {
             throw new Error("Canvas Element Can Not Be Null!")
         }
 
-        
+        this.context = canvasElement.getContext("2d");
         
     }
 

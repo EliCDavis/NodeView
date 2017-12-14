@@ -1,13 +1,14 @@
 {
     "compilerOptions": {
         "outDir": "dist",
+        "outFile": "./build/build.js",
         "typeRoots": ["./node_modules/@types"],
         "lib": [
             "dom",
-            "es2015",
-            "es5",
             "es6"
-        ]
+        ],
+        "noImplicitAny": true,
+        "removeComments": true
     },
     "include": [
         "src/**/*",

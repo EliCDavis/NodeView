@@ -20,7 +20,7 @@ module.exports = function (config) {
             }
         ],
         preprocessors: {
-            '**/*.ts': ['karma-typescript']
+            '**/*.ts': ['karma-typescript', 'coverage']
         },
         karmaTypescriptConfig: {
             tsconfig: './tsconfig.json',
@@ -36,7 +36,7 @@ module.exports = function (config) {
         colors: true,
         logLevel: config.LOG_DEBUG,
         autoWatch: true,
-        browsers: ['PhantomJS'],
+        browsers: ['PhantomJS', 'Chrome'],
         singleRun: false,
         failOnEmptyTestSuite: false,
         client: {

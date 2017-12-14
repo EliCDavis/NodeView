@@ -10,8 +10,9 @@ class Node {
 
     position: Vector;
 
+    
     constructor() {
-
+        this.position = new Vector(0, 0);
     }
 
     public distanceFrom(otherNode: Node) {
