@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "karma start",
-    "dev": "webpack --config ./demo/webpack.config.js"
+    "test": "karma start --single-run",
+    "dev": "concurrently \"node demo/dev.js\" \"npm test\""
   },
   "author": "",
   "license": "MIT",
@@ -14,6 +14,7 @@
     "@types/mocha": "^2.2.44",
     "awesome-typescript-loader": "^3.4.1",
     "chai": "^4.1.2",
+    "concurrently": "^3.5.1",
     "express": "^4.16.2",
     "karma": "^1.7.1",
     "karma-chai": "^0.1.0",
