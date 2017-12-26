@@ -3,5 +3,6 @@ import { Vector } from "./Vector";
 export { NodeRenderData }
 
 interface NodeRenderData {
-    positionOnCanvas: Vector
+    positionOnCanvas: Vector,
+    scale: number
 }

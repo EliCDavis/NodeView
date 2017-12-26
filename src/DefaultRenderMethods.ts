@@ -8,8 +8,9 @@ export { defaults }
 
 const defaults: RenderMethods = {
     drawBackground: (context: CanvasRenderingContext2D, view: NodeView) => {
-        context.fillStyle = "FFFF00";
-        context.fillRect(0, 0, this.context.canvas.width, this.context.canvas.height);
+        context.beginPath();
+        context.fillStyle = "#FFFFFF";
+        context.fillRect(0, 0, context.canvas.width, context.canvas.height);
         context.fill();
     },
     drawNode: (ctx: CanvasRenderingContext2D, view: NodeView, node: NodeRenderData) => {
@@ -17,14 +18,14 @@ const defaults: RenderMethods = {
         ctx.beginPath();
         ctx.arc(
             node.positionOnCanvas.x(),
-            node.positionOnCanvas.x(),
-            node.getRadius() * graph.getScale() * .6,
+            node.positionOnCanvas.y(),
+            node.scale,
             0,
             2 * Math.PI
         );
         ctx.fill();
     },
-    connectNodes: (context: CanvasRenderingContext2D, view: NodeView, nodeA: Node, nodeB: Node) => {
+    connectNodes: (context: CanvasRenderingContext2D, view: NodeView, nodeA: NodeRenderData, nodeB: NodeRenderData) => {
 
     },
     drawForeground: (context: CanvasRenderingContext2D, view: NodeView) => { }

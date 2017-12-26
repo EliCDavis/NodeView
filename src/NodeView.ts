@@ -34,9 +34,17 @@ class NodeView {
             throw new Error("Canvas Element Can Not Be Null!");
         }
 
+        canvasElement.style.width = (canvasElement.width) + "px";
+        canvasElement.style.height = (canvasElement.height) + "px"
+
         this.context = canvasElement.getContext("2d");
 
+        this.scale = 1;
+
+        this.topLeftPosition = new Vector(0, 0);
+
         this.nodes = new Array<Node>();
+        this.nodeLinks = new Array<NodeLink>();
 
         this.renderer = new Renderer(this, this.context, this.getAllDataNeededForRender);
         this.renderer.start();
@@ -53,10 +61,33 @@ class NodeView {
 
     /**
      * Computes all the data for rendering
+     * 
+     * TODO: Move to cached method where data only recomputed if
+     *       certain updates have called for it...
      */
-    private getAllDataNeededForRender: () => RenderData = () => ({
-        nodes: this.nodes.map((node: Node)=>({positionOnCanvas: new Vector(0,0)})),
-        links: this.nodeLinks
-    })
+    private getAllDataNeededForRender: () => RenderData = () => {
+
+        const convertedNodes = {};
+
+        // Build all node render data
+        this.nodes.forEach((node: Node) => {
+            convertedNodes[node.getId()] = {
+                positionOnCanvas: new Vector(
+                    (node.getPosition().x() + this.topLeftPosition.x()) * this.scale,
+                    (node.getPosition().y() + this.topLeftPosition.y()) * this.scale),
+                scale: node.getRadius() * this.scale
+            };
+        });
+
+        // Return all the node data.
+        return {
+            nodes: this.nodes.map((node: Node) => convertedNodes[node.getId()]),
+            links: this.nodeLinks.map((link: NodeLink) => ({
+                a: convertedNodes[link.a.getId()],
+                b: convertedNodes[link.b.getId()],
+                data: link.data
+            }))
+        }
+    }
 
 }
