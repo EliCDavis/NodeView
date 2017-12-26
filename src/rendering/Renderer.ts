@@ -1,6 +1,6 @@
 import { RenderMethods } from "./RenderMethods";
 import { defaults as DefualtRenderer } from "./DefaultRenderMethods";
-import { NodeView } from "./NodeView";
+import { NodeView } from "../NodeView";
 import { RenderData } from "./RenderData";
 
 export { Renderer }

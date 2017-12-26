@@ -1,6 +1,6 @@
 import { RenderMethods } from "./RenderMethods";
-import { NodeView } from "./NodeView";
-import { Node } from "./Node";
+import { NodeView } from "../NodeView";
+import { Node } from "../Node";
 import { NodeRenderData } from "./NodeRenderData";
 
 
@@ -9,12 +9,12 @@ export { defaults }
 const defaults: RenderMethods = {
     drawBackground: (context: CanvasRenderingContext2D, view: NodeView) => {
         context.beginPath();
-        context.fillStyle = "#FFFFFF";
+        context.fillStyle = "#b9c5d5";
         context.fillRect(0, 0, context.canvas.width, context.canvas.height);
         context.fill();
     },
     drawNode: (ctx: CanvasRenderingContext2D, view: NodeView, node: NodeRenderData) => {
-        ctx.fillStyle = "#FF5500";
+        ctx.fillStyle = "#32444e";
         ctx.beginPath();
         ctx.arc(
             node.positionOnCanvas.x(),

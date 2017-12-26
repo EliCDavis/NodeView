@@ -1,5 +1,5 @@
-import { NodeView } from "./NodeView";
-import { Node } from "./Node";
+import { NodeView } from "../NodeView";
+import { Node } from "../Node";
 import { NodeRenderData } from "./NodeRenderData";
 
 export { RenderMethods }

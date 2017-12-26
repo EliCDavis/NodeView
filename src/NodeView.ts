@@ -1,8 +1,9 @@
 import { Vector } from "./Vector";
 import { Node } from "./Node";
-import { Renderer } from "./Renderer";
-import { RenderData } from "./RenderData";
+import { Renderer } from "./rendering/Renderer";
+import { RenderData } from "./rendering/RenderData";
 import { NodeLink } from "./NodeLink";
+import { NodeCreationOptions } from "./NodeCreationOptions";
 
 export { NodeView }
 
@@ -34,8 +35,8 @@ class NodeView {
             throw new Error("Canvas Element Can Not Be Null!");
         }
 
-        canvasElement.style.width = (canvasElement.width) + "px";
-        canvasElement.style.height = (canvasElement.height) + "px"
+        canvasElement.width = canvasElement.clientWidth;
+        canvasElement.height = canvasElement.clientHeight;
 
         this.context = canvasElement.getContext("2d");
 
@@ -53,10 +54,19 @@ class NodeView {
     /**
      * Creates a node and adds it to the graph.
      */
-    public createNode(): Node {
-        let newNode = new Node();
+    public createNode(optionalConfig?: NodeCreationOptions): Node {
+        let newNode = new Node(optionalConfig);
         this.nodes.push(newNode);
         return newNode;
+    }
+
+    /**
+     * Creates a link between two arbitrary nodes
+     * @param nodeA 
+     * @param nodeB 
+     */
+    public linkNodes(nodeA: Node, nodeB: Node): NodeLink {
+        return null;
     }
 
     /**

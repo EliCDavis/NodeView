@@ -1,4 +1,4 @@
-import { Node } from "./index";
+import { Node } from "../index";
 import { NodeLinkRenderData } from "./NodeLinkRenderData";
 import { NodeRenderData } from "./NodeRenderData";
 
