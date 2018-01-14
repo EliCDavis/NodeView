@@ -29,16 +29,25 @@ class NodeView {
      */
     private nodeLinks: Array<NodeLink>;
 
-    constructor(canvasElement: HTMLCanvasElement) {
+    constructor(private canvasElement: HTMLCanvasElement) {
 
         if (!canvasElement) {
             throw new Error("Canvas Element Can Not Be Null!");
         }
 
-        canvasElement.width = canvasElement.clientWidth;
-        canvasElement.height = canvasElement.clientHeight;
+        // Resize canvas so shitty stretching doesn't occur
+        const resizeWindow = () => {
+            canvasElement.width = canvasElement.clientWidth;
+            canvasElement.height = canvasElement.clientHeight;
+        }
+        resizeWindow()
+        window.addEventListener("resize", () => resizeWindow())
 
         this.context = canvasElement.getContext("2d");
+
+        canvasElement.addEventListener("wheel", event => {
+            this.zoom(event.deltaY > 0 ? 0.3 : -0.3);
+        })
 
         this.scale = 1;
 
@@ -67,6 +76,33 @@ class NodeView {
      */
     public linkNodes(nodeA: Node, nodeB: Node): NodeLink {
         return null;
+    }
+
+
+    private getCanvasSize(): Vector {
+        return new Vector(this.canvasElement.width, this.canvasElement.height)
+    }
+
+    /**
+     * Zoom in or out of the map by a certain percentage of the current zoom level
+     * @param percentage positive percentage decreases scale
+     */
+    public zoom(percentage: number): number {
+        const newScale = this.scale - (this.scale * percentage);
+
+        const canvasSize = this.getCanvasSize()
+
+        const oldCenter = canvasSize.scale((1.0 / this.scale) * 0.5);
+        const newCenter = canvasSize.scale((1.0 / newScale) * 0.5);
+
+        this.topLeftPosition = this.topLeftPosition.add(newCenter).subtract(oldCenter);
+        this.scale = newScale;
+
+        return this.scale;
+    }
+
+    public getScale(): number {
+        return this.scale
     }
 
     /**
