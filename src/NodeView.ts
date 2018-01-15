@@ -4,6 +4,7 @@ import { Renderer } from "./rendering/Renderer";
 import { RenderData } from "./rendering/RenderData";
 import { NodeLink } from "./NodeLink";
 import { NodeCreationOptions } from "./NodeCreationOptions";
+import { InteractionManager } from "./InteractionManager"
 
 export { NodeView }
 
@@ -29,6 +30,11 @@ class NodeView {
      */
     private nodeLinks: Array<NodeLink>;
 
+    /**
+     * Keeps up with any events going on inside the canvas and performs appropriate actions on the view
+     */
+    private interactionManager: InteractionManager
+
     constructor(private canvasElement: HTMLCanvasElement) {
 
         if (!canvasElement) {
@@ -45,16 +51,14 @@ class NodeView {
 
         this.context = canvasElement.getContext("2d");
 
-        canvasElement.addEventListener("wheel", event => {
-            this.zoom(event.deltaY > 0 ? 0.3 : -0.3);
-        })
-
         this.scale = 1;
 
         this.topLeftPosition = new Vector(0, 0);
 
         this.nodes = new Array<Node>();
         this.nodeLinks = new Array<NodeLink>();
+
+        this.interactionManager = new InteractionManager(this, canvasElement);
 
         this.renderer = new Renderer(this, this.context, this.getAllDataNeededForRender);
         this.renderer.start();
@@ -103,6 +107,18 @@ class NodeView {
 
     public getScale(): number {
         return this.scale
+    }
+
+    public getTopLeftPosition(): Vector {
+        return this.topLeftPosition;
+    }
+
+    public setPosition(position: Vector) {
+        if(!position){
+            console.log("TODO: Throw error");
+            return;
+        }
+        this.topLeftPosition = position;
     }
 
     /**
