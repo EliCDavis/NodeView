@@ -144,7 +144,32 @@ class NodeView {
         }
 
         const index: number = this.nodeLinkLookup[nodeA.getId()][nodeB.getId()];
-        return index === -1 ? null : this.nodeLinks[index];
+        return index === -1 || index === undefined ? null : this.nodeLinks[index];
+    }
+
+    /**
+     * Deletes the link between two nodes, if one exists. Returns true if a link was found, false 
+     * if we couldn't find a link to delete.
+     * @param nodeA 
+     * @param nodeB 
+     */
+    public deleteLink(nodeA: Node, nodeB: Node): boolean {
+
+        if (this.nodeLinkLookup.hasOwnProperty(nodeA.getId()) === false) {
+            return false;
+        }
+
+        if (this.nodeLinkLookup[nodeA.getId()].hasOwnProperty(nodeB.getId()) === false) {
+            return false;
+        }
+
+        const indexToDelete = this.nodeLinkLookup[nodeA.getId()][nodeB.getId()];
+
+        this.nodeLinkLookup[nodeA.getId()][nodeB.getId()] = -1;
+        this.nodeLinkLookup[nodeB.getId()][nodeA.getId()] = -1;
+        this.nodeLinks[indexToDelete] = null;
+
+        return true;
     }
 
     private getCanvasSize(): Vector {

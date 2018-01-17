@@ -36,4 +36,33 @@ describe('NodeView', () => {
         assert.equal(view.getLink(nodeC, nodeA), null, 'data recieved is null');
     });
 
+    it('should be able to delete a link and not be able to look it up', () => {
+        const view = new NodeView(document.createElement('canvas'));
+        const nodeA = view.createNode();
+        const nodeB = view.createNode();
+        const nodeC = view.createNode();
+
+        view.linkNodes(nodeA, nodeB, "ab");
+
+        assert.equal(view.getLink(nodeA, nodeB).data, 'ab', 'data recieved is ab');
+        assert.equal(view.getLink(nodeB, nodeA).data, 'ab', 'data recieved is ab');
+
+        assert.equal(view.deleteLink(nodeA, nodeB), true);
+
+        assert.equal(view.getLink(nodeA, nodeB), null, 'data recieved to be null');
+        assert.equal(view.getLink(nodeB, nodeA), null, 'data recieved to be null');
+
+        view.linkNodes(nodeA, nodeB, "ab");
+        assert.equal(view.getLink(nodeA, nodeB).data, 'ab', 'data recieved is ab');
+        assert.equal(view.getLink(nodeB, nodeA).data, 'ab', 'data recieved is ab');
+
+    });
+
+    it('should be able to return false when deleting a link if the link did not exist', () => {
+        const view = new NodeView(document.createElement('canvas'));
+        const nodeA = view.createNode();
+        const nodeB = view.createNode();
+        assert.equal(view.deleteLink(nodeA, nodeB), false);
+    });
+
 });
