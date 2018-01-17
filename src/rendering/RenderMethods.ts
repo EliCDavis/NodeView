@@ -1,12 +1,12 @@
 import { NodeView } from "../NodeView";
 import { Node } from "../Node";
-import { NodeRenderData } from "./NodeRenderData";
+import { ItemRenderData } from "./ItemRenderData";
 
 export { RenderMethods }
 
 type BackgroundRenderer = (context: CanvasRenderingContext2D, view: NodeView) => void;
-type NodeRenderer = (context: CanvasRenderingContext2D, view: NodeView, node: NodeRenderData) => void;
-type NodeConectionRenderer = (context: CanvasRenderingContext2D, view: NodeView, nodeA: NodeRenderData, nodeB: NodeRenderData) => void
+type NodeRenderer = (context: CanvasRenderingContext2D, view: NodeView, node: ItemRenderData) => void;
+type NodeConectionRenderer = (context: CanvasRenderingContext2D, view: NodeView, nodeA: ItemRenderData, nodeB: ItemRenderData) => void
 type ForegroundRenderer = (context: CanvasRenderingContext2D, view: NodeView) => void; 
 
 /**

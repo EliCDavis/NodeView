@@ -1,7 +1,7 @@
 import { RenderMethods } from "./RenderMethods";
 import { NodeView } from "../NodeView";
 import { Node } from "../Node";
-import { NodeRenderData } from "./NodeRenderData";
+import { ItemRenderData } from "./ItemRenderData";
 
 
 export { defaults }
@@ -13,7 +13,7 @@ const defaults: RenderMethods = {
         context.fillRect(0, 0, context.canvas.width, context.canvas.height);
         context.fill();
     },
-    drawNode: (ctx: CanvasRenderingContext2D, view: NodeView, node: NodeRenderData) => {
+    drawNode: (ctx: CanvasRenderingContext2D, view: NodeView, node: ItemRenderData) => {
         ctx.fillStyle = "#32444e";
         ctx.beginPath();
         ctx.arc(
@@ -25,7 +25,7 @@ const defaults: RenderMethods = {
         );
         ctx.fill();
     },
-    connectNodes: (context: CanvasRenderingContext2D, view: NodeView, nodeA: NodeRenderData, nodeB: NodeRenderData) => {
+    connectNodes: (context: CanvasRenderingContext2D, view: NodeView, nodeA: ItemRenderData, nodeB: ItemRenderData) => {
 
     },
     drawForeground: (context: CanvasRenderingContext2D, view: NodeView) => { }

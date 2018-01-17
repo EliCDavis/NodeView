@@ -11,7 +11,12 @@ class Renderer {
 
     private renderMethods: RenderMethods;
 
-    constructor(private view: NodeView, private context: CanvasRenderingContext2D, private getRenderData: () => RenderData, overridingRenderMethods?: RenderMethods) {
+    constructor(
+        private view: NodeView,
+        private context: CanvasRenderingContext2D,
+        private getRenderData: () => RenderData,
+        overridingRenderMethods?: RenderMethods
+    ) {
         this.renderMethods = overridingRenderMethods ? overridingRenderMethods : DefualtRenderer;
     }
 
@@ -34,7 +39,7 @@ class Renderer {
 
         this.renderMethods.drawBackground(this.context, this.view);
         renderData.links.forEach(link => this.renderMethods.connectNodes(this.context, this.view, link.a, link.b));
-        renderData.nodes.forEach(node => this.renderMethods.drawNode(this.context, this.view, node));
+        renderData.items.forEach(node => this.renderMethods.drawNode(this.context, this.view, node));
         this.renderMethods.drawForeground(this.context, this.view);
 
         this.requestFrame();

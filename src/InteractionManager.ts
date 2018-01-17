@@ -2,14 +2,17 @@ import { NodeView } from "./NodeView";
 import { MouseState } from "./MouseState";
 import { Vector } from "./index";
 import { Node } from "./Node";
+import { RenderData } from "./rendering/RenderData";
+import { ItemRenderData } from "./rendering/ItemRenderData";
 
 
 export { InteractionManager }
 
-interface DraggableItem {
+interface Draggable {
     item: NodeView | Node,
     itemPosition: Vector,
-    mousePosition: Vector
+    mousePosition: Vector,
+    positionCalculator: (manager: InteractionManager, item: Draggable, event: MouseEvent) => Vector
 }
 
 class InteractionManager {
@@ -18,11 +21,12 @@ class InteractionManager {
 
     private lastMouseEvent: MouseEvent;
 
-    private itemBeingDragged: DraggableItem;
+    private itemBeingDragged: Draggable;
 
     constructor(
         private view: NodeView,
-        private canvas: HTMLCanvasElement
+        private canvas: HTMLCanvasElement,
+        private renderData: () => RenderData
     ) {
 
         this.currentMouseState = MouseState.Free;
@@ -33,11 +37,11 @@ class InteractionManager {
         canvas.addEventListener("wheel", event => view.zoom(event.deltaY > 0 ? 0.3 : -0.3));
 
         // mouse listenters
-        canvas.addEventListener('mouseup', (e) => this.onMouseUp(this, e));
-        canvas.addEventListener('mousedown', (e) => this.onMouseDown(this, e));
-        canvas.addEventListener('mouseout', (e) => this.onMouseOut(this, e));
-        canvas.addEventListener('mousemove', (e) => this.onMouseMove(this, e));
-        canvas.addEventListener('dblclick', (e) => this.onDoubleClick(this, e));
+        canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
+        canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+        canvas.addEventListener('mouseout', (e) => this.onMouseOut(e));
+        canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+        canvas.addEventListener('dblclick', (e) => this.onDoubleClick(e));
 
     }
 
@@ -47,43 +51,64 @@ class InteractionManager {
     }
 
     private mouseToGraphCoordinates(event: MouseEvent): Vector {
-        return this.relativeMouseCoordinates(event).scale(1.0 / this.view.getScale()).subtract(this.view.getTopLeftPosition())
+        return this.relativeMouseCoordinates(event).scale(1.0 / this.view.getScale()).subtract(this.view.getPosition())
     }
 
-    private onMouseUp(manager: InteractionManager, event: MouseEvent) {
-        manager.lastMouseEvent = event;
-        manager.itemBeingDragged = null;
+    private nodePositionCalculator(manager: InteractionManager, item: Draggable, event: MouseEvent): Vector {
+        return manager.mouseToGraphCoordinates(event).add(item.itemPosition.subtract(item.mousePosition));
+    }
+    
+    private graphPositionCalculator(manager: InteractionManager, item: Draggable, event: MouseEvent): Vector {
+        return item.item.getPosition().add(manager.mouseToGraphCoordinates(event).subtract(manager.itemBeingDragged.mousePosition));
     }
 
-    // THE CONTEXT OF "THIS" HAS CHANGED
-    private onMouseDown(manager: InteractionManager, event: MouseEvent) {
-        manager.lastMouseEvent = event;
-        manager.currentMouseState = MouseState.Hold;
+    private onMouseUp(event: MouseEvent) {
+        this.lastMouseEvent = event;
+        this.itemBeingDragged = null;
+    }
 
-        const coordinates = manager.mouseToGraphCoordinates(event);
-        manager.itemBeingDragged = {
-            item: manager.view,
-            itemPosition: manager.view.getTopLeftPosition(),
-            mousePosition: coordinates
+    private onMouseDown(event: MouseEvent) {
+        this.lastMouseEvent = event;
+        this.currentMouseState = MouseState.Hold;
+
+        const coordinates = this.mouseToGraphCoordinates(event);
+
+        // Determine if we've grabbed a node
+        const selectedItem = this.renderData().items.find(item => item.containsPoint(item, this.relativeMouseCoordinates(event)));
+
+        if (selectedItem) {
+            this.itemBeingDragged = {
+                item: selectedItem.originalItem,
+                itemPosition: selectedItem.originalItem.getPosition(),
+                mousePosition: coordinates,
+                positionCalculator: this.nodePositionCalculator
+            }
+        } else {
+            this.itemBeingDragged = {
+                item: this.view,
+                itemPosition: this.view.getPosition(),
+                mousePosition: coordinates,
+                positionCalculator: this.graphPositionCalculator
+            }
         }
     }
 
-    private onMouseOut(manager: InteractionManager, event: MouseEvent) {
-        manager.lastMouseEvent = event;
-        manager.currentMouseState = MouseState.Free;
-        manager.itemBeingDragged = null;
+    private onMouseOut(event: MouseEvent) {
+        this.lastMouseEvent = event;
+        this.currentMouseState = MouseState.Free;
+        this.itemBeingDragged = null;
     }
 
-    private onMouseMove(manager: InteractionManager, event: MouseEvent) {
-        manager.lastMouseEvent = event;
-        if (!manager.itemBeingDragged) {
+    private onMouseMove(event: MouseEvent) {
+        this.lastMouseEvent = event;
+        if (!this.itemBeingDragged) {
             return;
         }
-        manager.view.setPosition(manager.itemBeingDragged.mousePosition.subtract(manager.relativeMouseCoordinates(event).scale(1.0 / manager.view.getScale())))
+        this.itemBeingDragged.item.setPosition(this.itemBeingDragged.positionCalculator(this, this.itemBeingDragged, event))
     }
 
-    private onDoubleClick(manager: InteractionManager, event: MouseEvent) {
-        manager.lastMouseEvent = event;
+    private onDoubleClick(event: MouseEvent) {
+        this.lastMouseEvent = event;
     }
 
 }

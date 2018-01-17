@@ -1,10 +1,10 @@
 import { Node } from "../index";
 import { NodeLinkRenderData } from "./NodeLinkRenderData";
-import { NodeRenderData } from "./NodeRenderData";
+import { ItemRenderData } from "./ItemRenderData";
 
 export { RenderData }
 
 interface RenderData {
-    nodes: Array<NodeRenderData>,
+    items: Array<ItemRenderData>,
     links: Array<NodeLinkRenderData>
 }

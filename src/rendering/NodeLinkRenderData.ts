@@ -1,10 +1,10 @@
 
-import { NodeRenderData } from "./NodeRenderData"
+import { ItemRenderData } from "./ItemRenderData"
 
 export { NodeLinkRenderData }
 
 interface NodeLinkRenderData {
-    a: NodeRenderData,
-    b: NodeRenderData,
+    a: ItemRenderData,
+    b: ItemRenderData,
     data: object
 }

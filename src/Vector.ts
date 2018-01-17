@@ -31,4 +31,12 @@ class Vector {
         return new Vector(this._x * amount, this._y * amount);
     }
 
+    /**
+     * Determines how far two points are from one another.
+     * @param otherPoint The point we're going to see how far away we're from
+     */
+    public distance(otherPoint: Vector): number {
+        return Math.abs(Math.sqrt(Math.pow(otherPoint._x - this._x, 2) + Math.pow(otherPoint._y - this._y, 2)))
+    }
+
 }

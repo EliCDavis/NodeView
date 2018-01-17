@@ -63,10 +63,6 @@ class Node {
         }
     }
 
-    public distanceFrom(otherNode: Node): number {
-        throw new Error("Not implemented");
-    }
-
     public getRadius(): number {
         return this.radius
     }
@@ -77,6 +73,10 @@ class Node {
 
     public getPosition(): Vector {
         return this.position;
+    }
+
+    public setPosition(newPosition: Vector): void {
+        this.position = newPosition;
     }
 
 }

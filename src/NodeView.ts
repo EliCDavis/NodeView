@@ -5,6 +5,7 @@ import { RenderData } from "./rendering/RenderData";
 import { NodeLink } from "./NodeLink";
 import { NodeCreationOptions } from "./NodeCreationOptions";
 import { InteractionManager } from "./InteractionManager"
+import { ItemRenderData } from "./rendering/ItemRenderData";
 
 export { NodeView }
 
@@ -58,7 +59,7 @@ class NodeView {
         this.nodes = new Array<Node>();
         this.nodeLinks = new Array<NodeLink>();
 
-        this.interactionManager = new InteractionManager(this, canvasElement);
+        this.interactionManager = new InteractionManager(this, canvasElement, this.getAllDataNeededForRender);
 
         this.renderer = new Renderer(this, this.context, this.getAllDataNeededForRender);
         this.renderer.start();
@@ -109,12 +110,12 @@ class NodeView {
         return this.scale
     }
 
-    public getTopLeftPosition(): Vector {
+    public getPosition(): Vector {
         return this.topLeftPosition;
     }
 
     public setPosition(position: Vector) {
-        if(!position){
+        if (!position) {
             console.log("TODO: Throw error");
             return;
         }
@@ -133,17 +134,24 @@ class NodeView {
 
         // Build all node render data
         this.nodes.forEach((node: Node) => {
-            convertedNodes[node.getId()] = {
+
+            const rendered: ItemRenderData = {
                 positionOnCanvas: new Vector(
                     (node.getPosition().x() + this.topLeftPosition.x()) * this.scale,
                     (node.getPosition().y() + this.topLeftPosition.y()) * this.scale),
-                scale: node.getRadius() * this.scale
+                scale: node.getRadius() * this.scale,
+                containsPoint: (data: ItemRenderData, point: Vector) => {
+                    return data.positionOnCanvas.distance(point) < data.scale;
+                },
+                originalItem: node
             };
+
+            convertedNodes[node.getId()] = rendered;
         });
 
         // Return all the node data.
         return {
-            nodes: this.nodes.map((node: Node) => convertedNodes[node.getId()]),
+            items: this.nodes.map((node: Node) => convertedNodes[node.getId()]),
             links: this.nodeLinks.map((link: NodeLink) => ({
                 a: convertedNodes[link.a.getId()],
                 b: convertedNodes[link.b.getId()],
