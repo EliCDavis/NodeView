@@ -9,7 +9,7 @@ nodes.push(view.createNode({
 }));
 
 nodes.push(view.createNode({
-    position: new Vector(300, 100)
+    position: new Vector(400, 100)
 }));
 
 const link: NodeLink = view.linkNodes(nodes[0], nodes[1]);

@@ -1,10 +1,11 @@
+// MIT - Eli C Davis
 import { RenderMethods } from "./RenderMethods";
 import { NodeView } from "../NodeView";
 import { Node } from "../Node";
 import { ItemRenderData } from "./ItemRenderData";
 
 
-export { defaults }
+export { defaults };
 
 const defaults: RenderMethods = {
     drawBackground: (context: CanvasRenderingContext2D, view: NodeView) => {
@@ -26,7 +27,12 @@ const defaults: RenderMethods = {
         ctx.fill();
     },
     connectNodes: (context: CanvasRenderingContext2D, view: NodeView, nodeA: ItemRenderData, nodeB: ItemRenderData) => {
-
+        context.strokeStyle = '#000';
+        context.lineWidth = 3 * view.getScale();
+        context.beginPath();
+        context.moveTo(nodeA.positionOnCanvas.x(), nodeA.positionOnCanvas.y());
+        context.lineTo(nodeB.positionOnCanvas.x(), nodeB.positionOnCanvas.y());
+        context.stroke();
     },
     drawForeground: (context: CanvasRenderingContext2D, view: NodeView) => { }
-}
+};

@@ -1,13 +1,14 @@
+// MIT - Eli C Davis
 import { Vector } from "./Vector";
 import { Node } from "./Node";
 import { Renderer } from "./rendering/Renderer";
 import { RenderData } from "./rendering/RenderData";
 import { NodeLink } from "./NodeLink";
 import { NodeCreationOptions } from "./NodeCreationOptions";
-import { InteractionManager } from "./InteractionManager"
+import { InteractionManager } from "./InteractionManager";
 import { ItemRenderData } from "./rendering/ItemRenderData";
 
-export { NodeView }
+export { NodeView };
 
 class NodeView {
 
@@ -27,14 +28,21 @@ class NodeView {
     private nodes: Array<Node>;
 
     /**
+     * Double nested dictionary that points returns index of link in the nodeLinks array so lookup
+     * of links between nodes happen in O(n) time
+     */
+    private nodeLinkLookup: {};
+
+    /**
      * All links between nodes
      */
     private nodeLinks: Array<NodeLink>;
 
     /**
-     * Keeps up with any events going on inside the canvas and performs appropriate actions on the view
+     * Keeps up with any events going on inside the canvas and performs appropriate actions on the
+     * view
      */
-    private interactionManager: InteractionManager
+    private interactionManager: InteractionManager;
 
     constructor(private canvasElement: HTMLCanvasElement) {
 
@@ -46,8 +54,8 @@ class NodeView {
         const resizeWindow = () => {
             canvasElement.width = canvasElement.clientWidth;
             canvasElement.height = canvasElement.clientHeight;
-        }
-        resizeWindow()
+        };
+        resizeWindow();
         window.addEventListener("resize", () => resizeWindow())
 
         this.context = canvasElement.getContext("2d");
@@ -58,8 +66,13 @@ class NodeView {
 
         this.nodes = new Array<Node>();
         this.nodeLinks = new Array<NodeLink>();
+        this.nodeLinkLookup = {};
 
-        this.interactionManager = new InteractionManager(this, canvasElement, this.getAllDataNeededForRender);
+        this.interactionManager = new InteractionManager(
+            this,
+            canvasElement,
+            this.getAllDataNeededForRender
+        );
 
         this.renderer = new Renderer(this, this.context, this.getAllDataNeededForRender);
         this.renderer.start();
@@ -75,17 +88,67 @@ class NodeView {
     }
 
     /**
-     * Creates a link between two arbitrary nodes
+     * Creates a link between two arbitrary nodes, returns Link created. If the link existed, then
+     * we overwrite the current link data with what was passed in.
+     * If either of the nodes are null then we throw an error.
      * @param nodeA 
      * @param nodeB 
      */
-    public linkNodes(nodeA: Node, nodeB: Node): NodeLink {
-        return null;
+    public linkNodes(nodeA: Node, nodeB: Node, extraData?: any): NodeLink {
+        if (!nodeA || !nodeB) {
+            // TODO: Throw error
+            return null;
+        }
+
+        const alreadyExisting = this.getLink(nodeA, nodeB);
+        if (alreadyExisting) {
+            // alreadyExisting.data = extraData;
+            return alreadyExisting;
+        }
+
+        // Create the link now that we know it doesn't already exist
+        const newLink: NodeLink = {
+            a: nodeA,
+            b: nodeB,
+            data: extraData
+        };
+
+        const indexOfNewEle: number = this.nodeLinks.push(newLink) - 1;
+
+        // Store link appropriately for quick lookup..
+        this.createEntryOfLinkInLookup(nodeA.getId(), nodeB.getId(), indexOfNewEle);
+        this.createEntryOfLinkInLookup(nodeB.getId(), nodeA.getId(), indexOfNewEle);
+
+        return newLink;
     }
 
+    private createEntryOfLinkInLookup(a: string, b: string, index: number): void {
+        if (this.nodeLinkLookup.hasOwnProperty(a) === false) {
+            this.nodeLinkLookup[a] = {};
+        }
+        this.nodeLinkLookup[a][b] = index;
+    }
+
+    /**
+     * Returns any data set about the link, or null if the link does not exist
+     * @param nodeA 
+     * @param nodeB 
+     */
+    public getLink(nodeA: Node, nodeB: Node): NodeLink {
+        if (this.nodeLinkLookup.hasOwnProperty(nodeA.getId()) === false) {
+            return null;
+        }
+
+        if (this.nodeLinkLookup[nodeA.getId()].hasOwnProperty(nodeB.getId()) === false) {
+            return null;
+        }
+
+        const index: number = this.nodeLinkLookup[nodeA.getId()][nodeB.getId()];
+        return index === -1 ? null : this.nodeLinks[index];
+    }
 
     private getCanvasSize(): Vector {
-        return new Vector(this.canvasElement.width, this.canvasElement.height)
+        return new Vector(this.canvasElement.width, this.canvasElement.height);
     }
 
     /**
@@ -95,7 +158,7 @@ class NodeView {
     public zoom(percentage: number): number {
         const newScale = this.scale - (this.scale * percentage);
 
-        const canvasSize = this.getCanvasSize()
+        const canvasSize = this.getCanvasSize();
 
         const oldCenter = canvasSize.scale((1.0 / this.scale) * 0.5);
         const newCenter = canvasSize.scale((1.0 / newScale) * 0.5);
@@ -106,17 +169,13 @@ class NodeView {
         return this.scale;
     }
 
-    public getScale(): number {
-        return this.scale
-    }
+    public getScale: () => number = () => this.scale;
 
-    public getPosition(): Vector {
-        return this.topLeftPosition;
-    }
+    public getPosition: () => Vector = () => this.topLeftPosition;
 
     public setPosition(position: Vector) {
         if (!position) {
-            console.log("TODO: Throw error");
+            // TODO: THROW ERROR OR SOMETHING
             return;
         }
         this.topLeftPosition = position;
@@ -125,12 +184,12 @@ class NodeView {
     /**
      * Computes all the data for rendering
      * 
-     * TODO: Move to cached method where data only recomputed if
-     *       certain updates have called for it...
+     * TODO: Move to cached method where data only recomputed if certain updates have called for
+     *       it...
      */
     private getAllDataNeededForRender: () => RenderData = () => {
 
-        const convertedNodes = {};
+        const convertedNodes: any = {};
 
         // Build all node render data
         this.nodes.forEach((node: Node) => {
@@ -157,7 +216,7 @@ class NodeView {
                 b: convertedNodes[link.b.getId()],
                 data: link.data
             }))
-        }
+        };
     }
 
 }
